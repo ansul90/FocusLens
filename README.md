@@ -35,9 +35,17 @@ Browsers capture the page title for every session. FocusLens sends these titles 
 
 - Model: `gemini-2.5-flash`
 - Batches up to 25 sessions per request
-- Runs automatically on session end when an API key is configured
 - **Reclassify Now** button in Settings for on-demand re-processing of all pending sessions
 - Prompt injection defence: page titles are treated as data only
+
+#### When Gemini is called
+
+| Trigger | Behaviour |
+|---|---|
+| **App launch** | Runs once at startup — classifies any sessions still tagged "Browser" from previous runs |
+| **Reclassify Now button** | On-demand, from the AI settings tab |
+
+> Session-end triggered classification is currently disabled. New browser sessions accumulate in the "Browser" category and are picked up on the next app launch or manual reclassification.
 
 ### Settings
 - **General** — idle threshold, minimum session length
