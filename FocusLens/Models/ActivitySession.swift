@@ -1,7 +1,7 @@
 import Foundation
 import GRDB
 
-struct ActivitySession: Identifiable, Hashable, Sendable {
+struct ActivitySession: Codable, Identifiable, Hashable, Sendable {
     var id: Int64?
     let appBundleId: String
     let appName: String
