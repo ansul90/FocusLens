@@ -38,6 +38,8 @@
 		2A000000000000000000001D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000020 /* SettingsView.swift */; };
 		2A000000000000000000001E /* CategorySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000021 /* CategorySettingsView.swift */; };
 		2A000000000000000000001F /* Migration003_SeedRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000022 /* Migration003_SeedRules.swift */; };
+		2A0000000000000000000020 /* BrowserBundleIds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000023 /* BrowserBundleIds.swift */; };
+		2A0000000000000000000021 /* GeminiSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000024 /* GeminiSettings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +77,8 @@
 		1A0000000000000000000020 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		1A0000000000000000000021 /* CategorySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategorySettingsView.swift; sourceTree = "<group>"; };
 		1A0000000000000000000022 /* Migration003_SeedRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration003_SeedRules.swift; sourceTree = "<group>"; };
+		1A0000000000000000000023 /* BrowserBundleIds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserBundleIds.swift; sourceTree = "<group>"; };
+		1A0000000000000000000024 /* GeminiSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiSettings.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,6 +118,7 @@
 				3A0000000000000000000007 /* Tracking */,
 				3A0000000000000000000008 /* UI */,
 				3A0000000000000000000009 /* Utilities */,
+				3A000000000000000000000C /* AI */,
 				1A0000000000000000000015 /* Assets.xcassets */,
 				1A0000000000000000000016 /* Info.plist */,
 				1A0000000000000000000017 /* FocusLens.entitlements */,
@@ -214,6 +219,15 @@
 				1A0000000000000000000002 /* FocusLensTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3A000000000000000000000C /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				1A0000000000000000000023 /* BrowserBundleIds.swift */,
+				1A0000000000000000000024 /* GeminiSettings.swift */,
+			);
+			path = AI;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -356,6 +370,8 @@
 				2A000000000000000000001C /* DashboardCharts.swift in Sources */,
 				2A000000000000000000001D /* SettingsView.swift in Sources */,
 				2A000000000000000000001E /* CategorySettingsView.swift in Sources */,
+				2A0000000000000000000020 /* BrowserBundleIds.swift in Sources */,
+				2A0000000000000000000021 /* GeminiSettings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

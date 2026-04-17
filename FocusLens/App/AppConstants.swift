@@ -17,4 +17,13 @@ enum AppConstants {
     static let databaseURL: URL = {
         appSupportDirectory.appendingPathComponent(databaseName)
     }()
+
+    enum AI {
+        static let endpointBase: String = "https://generativelanguage.googleapis.com/v1beta/models"
+        static let modelName: String = "gemini-2.0-flash"
+        static let maxBatchSize: Int = 25
+        static let requestTimeoutSeconds: TimeInterval = 15
+        static let userDefaultsKeyAPIKey: String = "ai.gemini.apiKey"
+        static let userDefaultsKeyEnabled: String = "ai.gemini.enabled"
+    }
 }
