@@ -106,7 +106,7 @@ struct ActivitySessionStore {
             let rows = try Row.fetchAll(
                 db,
                 sql: """
-                    SELECT CAST(strftime('%H', started_at) AS INTEGER) as hour,
+                    SELECT CAST(strftime('%H', started_at, 'localtime') AS INTEGER) as hour,
                            COALESCE(SUM(duration_seconds), 0) as total
                     FROM activity_sessions
                     WHERE started_at >= ? AND is_idle = 0 AND ended_at IS NOT NULL
@@ -126,7 +126,7 @@ struct ActivitySessionStore {
                 db,
                 sql: """
                     SELECT
-                        CAST(strftime('%H', a.started_at) AS INTEGER) as hour,
+                        CAST(strftime('%H', a.started_at, 'localtime') AS INTEGER) as hour,
                         COALESCE(c.is_productive, 0) as tier,
                         COALESCE(SUM(a.duration_seconds), 0) as total
                     FROM activity_sessions a
@@ -148,9 +148,7 @@ struct ActivitySessionStore {
     }
 
     private func todayMidnightISO() -> String {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
-        let midnight = cal.startOfDay(for: Date())
+        let midnight = Calendar.current.startOfDay(for: Date())
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
         fmt.timeZone = TimeZone(identifier: "UTC")!
