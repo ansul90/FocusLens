@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct DashboardView: View {
-    @State private var aggregate = TodayAggregate()
+    @Environment(TodayAggregate.self) private var aggregate
 
     var body: some View {
         ScrollView {
@@ -16,7 +16,6 @@ struct DashboardView: View {
             .padding(24)
         }
         .frame(minWidth: 600, minHeight: 400)
-        .onAppear { aggregate.refreshStats() }
     }
 
     // MARK: - Header: productivity score + total time

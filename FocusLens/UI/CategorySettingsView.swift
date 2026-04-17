@@ -1,4 +1,5 @@
 import SwiftUI
+import os
 
 struct CategorySettingsView: View {
     @State private var categories: [Category] = []
@@ -12,8 +13,11 @@ struct CategorySettingsView: View {
     @State private var newRuleType: RuleMatchType = .appBundle
     @State private var newRuleValue = ""
     @State private var newRulePriority = 50
+    @State private var errorMessage: String?
 
-    private let store = CategoryStore()
+    @State private var store = CategoryStore()
+
+    private let logger = Logger(subsystem: "com.focuslens.app", category: "CategorySettings")
 
     var body: some View {
         HStack(spacing: 0) {
@@ -22,6 +26,14 @@ struct CategorySettingsView: View {
             ruleList
         }
         .onAppear { loadCategories() }
+        .alert("Error", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        ), actions: {
+            Button("OK") { errorMessage = nil }
+        }, message: {
+            Text(errorMessage ?? "")
+        })
     }
 
     // MARK: - Left: category list
@@ -45,7 +57,11 @@ struct CategorySettingsView: View {
                 .onDelete { offsets in
                     for i in offsets {
                         guard let id = categories[i].id else { continue }
-                        try? store.deleteCategory(id: id)
+                        do {
+                            try store.deleteCategory(id: id)
+                        } catch {
+                            errorMessage = "Failed to delete category: \(error.localizedDescription)"
+                        }
                     }
                     loadCategories()
                 }
@@ -64,7 +80,12 @@ struct CategorySettingsView: View {
         .sheet(isPresented: $showAddCategory) { addCategorySheet }
         .onChange(of: selectedCategory) { _, cat in
             guard let cat else { rules = []; return }
-            rules = (try? store.fetchRules(for: cat.id ?? 0)) ?? []
+            do {
+                rules = try store.fetchRules(for: cat.id ?? 0)
+            } catch {
+                logger.error("Failed to fetch rules: \(error.localizedDescription)")
+                rules = []
+            }
         }
     }
 
@@ -91,9 +112,18 @@ struct CategorySettingsView: View {
                     .onDelete { offsets in
                         for i in offsets {
                             guard let id = rules[i].id else { continue }
-                            try? store.deleteRule(id: id)
+                            do {
+                                try store.deleteRule(id: id)
+                            } catch {
+                                errorMessage = "Failed to delete rule: \(error.localizedDescription)"
+                            }
                         }
-                        rules = (try? store.fetchRules(for: cat.id ?? 0)) ?? []
+                        do {
+                            rules = try store.fetchRules(for: cat.id ?? 0)
+                        } catch {
+                            logger.error("Failed to reload rules: \(error.localizedDescription)")
+                            rules = []
+                        }
                     }
                 }
                 HStack {
@@ -147,10 +177,16 @@ struct CategorySettingsView: View {
                         colorHex: newCategoryColor,
                         productivityScore: newCategoryScore
                     )
-                    try? store.insert(cat)
-                    loadCategories()
-                    newCategoryName = ""
-                    showAddCategory = false
+                    do {
+                        try store.insert(cat)
+                        loadCategories()
+                        newCategoryName = ""
+                        newCategoryColor = "#5B8CFF"
+                        newCategoryScore = 0
+                        showAddCategory = false
+                    } catch {
+                        errorMessage = "Failed to add category: \(error.localizedDescription)"
+                    }
                 }
                 .disabled(newCategoryName.trimmingCharacters(in: .whitespaces).isEmpty)
             }
@@ -189,10 +225,16 @@ struct CategorySettingsView: View {
                         matchValue: newRuleValue,
                         priority: newRulePriority
                     )
-                    try? store.insert(rule)
-                    rules = (try? store.fetchRules(for: category.id ?? 0)) ?? []
-                    newRuleValue = ""
-                    showAddRule = false
+                    do {
+                        try store.insert(rule)
+                        rules = (try? store.fetchRules(for: category.id ?? 0)) ?? []
+                        newRuleValue = ""
+                        newRuleType = .appBundle
+                        newRulePriority = 50
+                        showAddRule = false
+                    } catch {
+                        errorMessage = "Failed to add rule: \(error.localizedDescription)"
+                    }
                 }
                 .disabled(newRuleValue.trimmingCharacters(in: .whitespaces).isEmpty)
             }
@@ -204,7 +246,12 @@ struct CategorySettingsView: View {
     // MARK: - Helpers
 
     private func loadCategories() {
-        categories = (try? store.fetchAllCategories()) ?? []
+        do {
+            categories = try store.fetchAllCategories()
+        } catch {
+            logger.error("Failed to load categories: \(error.localizedDescription)")
+            categories = []
+        }
     }
 
     private func scoreLabel(_ score: Int) -> String {

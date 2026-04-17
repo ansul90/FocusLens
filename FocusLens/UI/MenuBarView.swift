@@ -5,8 +5,6 @@ struct MenuBarView: View {
     let tracker: ActivityTracker
 
     @Environment(\.openWindow) private var openWindow
-    @State private var tickCount = 0
-    private let timer = Timer.publish(every: AppConstants.menuRefreshIntervalSeconds, on: .main, in: .common).autoconnect()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -17,7 +15,6 @@ struct MenuBarView: View {
             controlsSection
         }
         .frame(width: 280)
-        .onReceive(timer) { _ in tickCount += 1 }
     }
 
     private var headerSection: some View {

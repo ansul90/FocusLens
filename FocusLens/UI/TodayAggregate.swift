@@ -58,7 +58,7 @@ final class TodayAggregate {
         // Productivity score: map weighted average from [-2,+2] to [0,100]
         if categorizedTotal > 0 {
             let avg = weightedSum / categorizedTotal  // range [-2, +2]
-            productivityScore = Int(((avg + 2.0) / 4.0) * 100)
+            productivityScore = max(0, min(100, Int(((avg + 2.0) / 4.0) * 100)))
         } else {
             productivityScore = 50  // neutral when no data
         }
