@@ -3,112 +3,161 @@ import SwiftUI
 struct DashboardView: View {
     @Environment(TodayAggregate.self) private var aggregate
 
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMMM d"
+        return formatter.string(from: Date())
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                headerRow
-                if !aggregate.categoryBreakdown.isEmpty {
-                    categorySection
-                }
-                hourlySection
-                appRankingsSection
-            }
-            .padding(24)
+        VStack(alignment: .leading, spacing: 0) {
+            dateHeader
+            topSection
+            Divider()
+            middleSection
+            Divider()
+            bottomSection
         }
-        .frame(minWidth: 600, minHeight: 400)
+        .padding(20)
+        .frame(width: 680, height: 500)
     }
 
-    // MARK: - Header: productivity score + total time
+    // MARK: - Date Header
 
-    private var headerRow: some View {
-        HStack(spacing: 32) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Productivity Score")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text("\(aggregate.productivityScore)")
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
-                    .foregroundStyle(scoreColor)
-                Text("out of 100")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            Divider().frame(height: 60)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Active Today")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+    private var dateHeader: some View {
+        Text(formattedDate)
+            .font(.title3).bold()
+            .padding(.bottom, 12)
+    }
+
+    // MARK: - Top Section: Gauge + Summary
+
+    private var topSection: some View {
+        HStack(spacing: 20) {
+            ProductivityGaugeView(score: aggregate.productivityScore)
+                .frame(width: 120, height: 120)
+
+            summaryColumn
+        }
+        .padding(.vertical, 16)
+    }
+
+    private var summaryColumn: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(DurationFormatter.string(from: aggregate.totalActiveSeconds))
-                    .font(.system(size: 32, weight: .semibold, design: .rounded))
+                    .font(.title2).bold()
+                Text("tracked today")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            Spacer()
+
+            ProductivityBreakdownBar(breakdown: aggregate.productivityTierBreakdown)
+                .frame(height: 12)
+
+            tierLegend
         }
     }
 
-    private var scoreColor: Color {
-        switch aggregate.productivityScore {
-        case 75...: return .green
-        case 50..<75: return .orange
-        default: return .red
+    private var tierLegend: some View {
+        let tierSeconds: [Int: Double] = Dictionary(
+            aggregate.productivityTierBreakdown.map { ($0.tier, $0.seconds) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let activeTiers = TierColors.ordered.filter { tier in
+            (tierSeconds[tier] ?? 0) > 0
+        }
+
+        return VStack(alignment: .leading, spacing: 2) {
+            ForEach(activeTiers, id: \.self) { tier in
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(TierColors.color(for: tier))
+                        .frame(width: 8, height: 8)
+                    Text(TierColors.label(for: tier))
+                        .font(.caption2)
+                    Spacer()
+                    Text(DurationFormatter.string(from: tierSeconds[tier] ?? 0))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 
-    // MARK: - Category breakdown
+    // MARK: - Middle Section: Categories + Top Apps
 
-    private var categorySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("By Category")
-                .font(.headline)
-            let maxSeconds = aggregate.categoryBreakdown.first?.totalSeconds ?? 1
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(aggregate.categoryBreakdown, id: \.category.name) { entry in
+    private var middleSection: some View {
+        HStack(alignment: .top, spacing: 0) {
+            categoriesColumn
+            Divider().padding(.horizontal, 12)
+            appsColumn
+        }
+        .padding(.vertical, 16)
+    }
+
+    private var categoriesColumn: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("CATEGORIES")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            if aggregate.categoryBreakdown.isEmpty {
+                Text("No data yet")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            } else {
+                let maxCatSeconds = aggregate.categoryBreakdown.first?.totalSeconds ?? 1
+                ForEach(aggregate.categoryBreakdown.prefix(6), id: \.category.name) { entry in
                     CategoryBarRow(
                         name: entry.category.name,
                         colorHex: entry.category.colorHex,
                         seconds: entry.totalSeconds,
-                        maxSeconds: maxSeconds
+                        maxSeconds: maxCatSeconds
                     )
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Hourly timeline
+    private var appsColumn: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("TOP APPS")
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
-    private var hourlySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Today's Timeline")
-                .font(.headline)
-            HourlyTierChart(hourlyTierBreakdown: aggregate.hourlyTierBreakdown)
-        }
-    }
-
-    // MARK: - App rankings
-
-    private var appRankingsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Top Apps")
-                .font(.headline)
             if aggregate.topApps.isEmpty {
-                Text("No activity recorded yet")
+                Text("No data yet")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(aggregate.topApps.indices, id: \.self) { i in
-                    let app = aggregate.topApps[i]
+                ForEach(aggregate.topApps.prefix(6), id: \.appName) { app in
                     HStack {
-                        Text("\(i + 1).")
-                            .foregroundStyle(.secondary)
-                            .frame(width: 24, alignment: .trailing)
                         Text(app.appName)
+                            .font(.callout)
+                            .lineLimit(1)
                         Spacer()
                         Text(DurationFormatter.string(from: app.totalSeconds))
+                            .font(.callout)
                             .foregroundStyle(.secondary)
                     }
-                    .font(.callout)
-                    if i < aggregate.topApps.count - 1 { Divider() }
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Bottom Section: Timeline
+
+    private var bottomSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("TIMELINE")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HourlyTierChart(hourlyTierBreakdown: aggregate.hourlyTierBreakdown)
+                .frame(height: 100)
+        }
+        .padding(.vertical, 16)
     }
 }
