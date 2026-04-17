@@ -18,7 +18,7 @@ struct FocusLensApp: App {
                                 if GeminiSettings().hasValidKey {
                                     try? await browserClassifier.classifyPending()
                                 }
-                                await MainActor.run { aggregate.refreshStats() }
+                                await aggregate.refreshStats()
                             }
                         },
                         onStateChanged: { [aggregate] name, paused in
@@ -35,7 +35,7 @@ struct FocusLensApp: App {
                         if GeminiSettings().hasValidKey {
                             try? await browserClassifier.classifyPending()
                         }
-                        await MainActor.run { aggregate.refreshStats() }
+                        await aggregate.refreshStats()
                     }
                 }
         }

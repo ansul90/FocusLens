@@ -23,21 +23,42 @@ final class TodayAggregate {
         self.categoryStore = categoryStore
     }
 
-    func refreshStats() {
-        topApps = (try? store.fetchTodayTopApps(limit: 10)) ?? []
-        totalActiveSeconds = (try? store.fetchTodayActiveSeconds()) ?? 0
-        do {
-            hourlyTierBreakdown = try store.fetchTodayHourlyTierBreakdown()
-        } catch {
-            logger.error("fetchTodayHourlyTierBreakdown failed: \(error)")
-            hourlyTierBreakdown = []
-        }
-        refreshCategoryBreakdown()
+    private struct FetchedSnapshot: Sendable {
+        let topApps: [(appName: String, appBundleId: String, totalSeconds: Double)]
+        let totalActiveSeconds: Double
+        let hourlyTierBreakdown: [(hour: Int, tier: Int, seconds: Double)]
+        let rawBreakdown: [(categoryId: Int64?, totalSeconds: Double)]
+        let categories: [Category]
     }
 
-    private func refreshCategoryBreakdown() {
-        guard let rawBreakdown = try? store.fetchTodayCategoryBreakdown(),
-              let categories = try? categoryStore.fetchAllCategories() else {
+    func refreshStats() async {
+        // Snapshot non-isolated refs so the detached task can capture them without crossing MainActor.
+        let store = self.store
+        let categoryStore = self.categoryStore
+
+        // Run sync GRDB reads at .utility — below GRDB workers' Default QoS — to avoid priority inversion
+        // with the main thread, which is at User-interactive QoS.
+        let fetched = await Task.detached(priority: .utility) { () -> FetchedSnapshot in
+            FetchedSnapshot(
+                topApps: (try? store.fetchTodayTopApps(limit: 10)) ?? [],
+                totalActiveSeconds: (try? store.fetchTodayActiveSeconds()) ?? 0,
+                hourlyTierBreakdown: (try? store.fetchTodayHourlyTierBreakdown()) ?? [],
+                rawBreakdown: (try? store.fetchTodayCategoryBreakdown()) ?? [],
+                categories: (try? categoryStore.fetchAllCategories()) ?? []
+            )
+        }.value
+
+        topApps = fetched.topApps
+        totalActiveSeconds = fetched.totalActiveSeconds
+        hourlyTierBreakdown = fetched.hourlyTierBreakdown
+        refreshCategoryBreakdown(rawBreakdown: fetched.rawBreakdown, categories: fetched.categories)
+    }
+
+    private func refreshCategoryBreakdown(
+        rawBreakdown: [(categoryId: Int64?, totalSeconds: Double)],
+        categories: [Category]
+    ) {
+        guard !categories.isEmpty else {
             categoryBreakdown = []
             productivityScore = 50
             productivityTierBreakdown = []
