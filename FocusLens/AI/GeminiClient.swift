@@ -9,6 +9,21 @@ enum GeminiError: Error, Sendable {
     case decoding(Error)
 }
 
+// MARK: - Typed request envelope (avoids untyped [String: Any] body)
+
+private struct GeminiRequestEnvelope: Encodable {
+    struct Part: Encodable { let text: String }
+    struct Content: Encodable { let parts: [Part] }
+    struct SystemInstruction: Encodable { let parts: [Part] }
+    struct GenerationConfig: Encodable {
+        let responseMimeType: String
+        let temperature: Double
+    }
+    let system_instruction: SystemInstruction
+    let contents: [Content]
+    let generationConfig: GenerationConfig
+}
+
 // MARK: - Actor
 
 actor GeminiClient {
@@ -21,57 +36,34 @@ actor GeminiClient {
     }
 
     func classify(_ input: GeminiBatchRequest) async throws -> GeminiBatchResponse {
-        // 1. Guard: key must be present
-        guard settings.hasValidKey else { throw GeminiError.missingKey }
-        let apiKey = settings.apiKey
+        // Snapshot key once to avoid TOCTOU across hasValidKey / apiKey reads.
+        let apiKey = settings.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard settings.isEnabled && !apiKey.isEmpty else { throw GeminiError.missingKey }
 
-        // 2. Build URL: {endpointBase}/{modelName}:generateContent?key={apiKey}
         let urlString = "\(AppConstants.AI.endpointBase)/\(AppConstants.AI.modelName):generateContent?key=\(apiKey)"
         guard let url = URL(string: urlString) else { throw GeminiError.invalidResponse }
 
-        // 3. Build request body
-        // Gemini REST body shape:
-        // {
-        //   "system_instruction": { "parts": [{ "text": "<system prompt>" }] },
-        //   "contents": [{ "parts": [{ "text": "<user message>" }] }],
-        //   "generationConfig": { "responseMimeType": "application/json", "temperature": 0.0 }
-        // }
-        let body: [String: Any] = [
-            "system_instruction": [
-                "parts": [["text": GeminiPrompt.system]]
-            ],
-            "contents": [
-                ["parts": [["text": GeminiPrompt.user(for: input)]]]
-            ],
-            "generationConfig": [
-                "responseMimeType": "application/json",
-                "temperature": 0.0
-            ]
-        ]
-        guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else {
-            throw GeminiError.invalidResponse
-        }
-
-        // 4. Configure request
-        var request = URLRequest(
-            url: url,
-            timeoutInterval: AppConstants.AI.requestTimeoutSeconds
+        let envelope = GeminiRequestEnvelope(
+            system_instruction: .init(parts: [.init(text: GeminiPrompt.system)]),
+            contents: [.init(parts: [.init(text: GeminiPrompt.user(for: input))])],
+            generationConfig: .init(responseMimeType: "application/json", temperature: 0.0)
         )
+        let bodyData = try JSONEncoder().encode(envelope)
+
+        var request = URLRequest(url: url, timeoutInterval: AppConstants.AI.requestTimeoutSeconds)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = bodyData
 
-        // 5. Execute
         let (data, response) = try await session.data(for: request)
 
-        // 6. Check HTTP status
         if let httpResponse = response as? HTTPURLResponse,
            !(200..<300).contains(httpResponse.statusCode) {
             throw GeminiError.httpStatus(httpResponse.statusCode)
         }
 
-        // 7. Extract inner text from Gemini envelope
-        // Envelope shape: { "candidates": [{ "content": { "parts": [{ "text": "<json string>" }] } }] }
+        // Extract inner JSON string from Gemini envelope:
+        // { "candidates": [{ "content": { "parts": [{ "text": "<json>" }] } }] }
         guard
             let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
             let candidates = envelope["candidates"] as? [[String: Any]],
@@ -84,7 +76,6 @@ actor GeminiClient {
             throw GeminiError.invalidResponse
         }
 
-        // 8. Decode inner JSON as GeminiBatchResponse
         do {
             return try JSONDecoder().decode(GeminiBatchResponse.self, from: innerData)
         } catch {
