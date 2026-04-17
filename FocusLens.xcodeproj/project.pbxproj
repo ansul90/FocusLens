@@ -35,6 +35,8 @@
 		2A000000000000000000001A /* CategorizationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000001D /* CategorizationEngineTests.swift */; };
 		2A000000000000000000001B /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000001E /* DashboardView.swift */; };
 		2A000000000000000000001C /* DashboardCharts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000001F /* DashboardCharts.swift */; };
+		2A000000000000000000001D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000020 /* SettingsView.swift */; };
+		2A000000000000000000001E /* CategorySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000021 /* CategorySettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +71,8 @@
 		1A000000000000000000001D /* CategorizationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategorizationEngineTests.swift; sourceTree = "<group>"; };
 		1A000000000000000000001E /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		1A000000000000000000001F /* DashboardCharts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardCharts.swift; sourceTree = "<group>"; };
+		1A0000000000000000000020 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		1A0000000000000000000021 /* CategorySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategorySettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -174,6 +178,8 @@
 				1A000000000000000000000F /* TodayAggregate.swift */,
 				1A000000000000000000001E /* DashboardView.swift */,
 				1A000000000000000000001F /* DashboardCharts.swift */,
+				1A0000000000000000000020 /* SettingsView.swift */,
+				1A0000000000000000000021 /* CategorySettingsView.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -344,6 +350,8 @@
 				2A0000000000000000000019 /* CategorizationEngine.swift in Sources */,
 				2A000000000000000000001B /* DashboardView.swift in Sources */,
 				2A000000000000000000001C /* DashboardCharts.swift in Sources */,
+				2A000000000000000000001D /* SettingsView.swift in Sources */,
+				2A000000000000000000001E /* CategorySettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
