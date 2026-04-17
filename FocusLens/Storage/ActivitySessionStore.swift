@@ -92,6 +92,9 @@ struct ActivitySessionStore {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "UTC")!
         let midnight = cal.startOfDay(for: Date())
-        return DateFormatters.string(from: midnight)
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        fmt.timeZone = TimeZone(identifier: "UTC")!
+        return fmt.string(from: midnight)
     }
 }

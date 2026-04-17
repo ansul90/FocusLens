@@ -22,6 +22,7 @@ struct FocusLensApp: App {
                     )
                     LoginItemManager.registerAtLogin()
                     await tracker.start()
+                    Task { @MainActor in aggregate.refreshStats() }
                 }
         }
         .menuBarExtraStyle(.window)
