@@ -1,6 +1,10 @@
 import Foundation
 import GRDB
 
+enum CategoryStoreError: Error {
+    case missingPrimaryKey
+}
+
 struct CategoryStore {
     private let dbPool: DatabasePool
 
@@ -23,6 +27,7 @@ struct CategoryStore {
     }
 
     func update(_ category: Category) throws {
+        guard category.id != nil else { throw CategoryStoreError.missingPrimaryKey }
         try dbPool.write { db in try category.update(db) }
     }
 
@@ -56,6 +61,7 @@ struct CategoryStore {
     }
 
     func update(_ rule: CategoryRule) throws {
+        guard rule.id != nil else { throw CategoryStoreError.missingPrimaryKey }
         try dbPool.write { db in try rule.update(db) }
     }
 

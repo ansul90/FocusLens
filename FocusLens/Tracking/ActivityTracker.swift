@@ -138,7 +138,8 @@ actor ActivityTracker {
             startedAt: Date(),
             endedAt: nil,
             durationSeconds: nil,
-            isIdle: false
+            isIdle: false,
+            categoryId: nil
         )
         currentSession = try? store.insert(session)
         currentAppName = name
@@ -158,7 +159,8 @@ actor ActivityTracker {
             startedAt: Date(),
             endedAt: nil,
             durationSeconds: nil,
-            isIdle: true
+            isIdle: true,
+            categoryId: nil
         )
         currentSession = try? store.insert(session)
         currentAppName = name

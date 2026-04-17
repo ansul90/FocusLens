@@ -10,7 +10,7 @@ struct ActivitySession: Codable, Identifiable, Hashable, Sendable {
     let endedAt: Date?
     let durationSeconds: Double?
     let isIdle: Bool
-    var categoryId: Int64?
+    let categoryId: Int64?
 
     enum CodingKeys: String, CodingKey {
         case id

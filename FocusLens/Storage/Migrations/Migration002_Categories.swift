@@ -32,6 +32,11 @@ enum Migration002_Categories {
             ALTER TABLE activity_sessions ADD COLUMN category_id INTEGER REFERENCES categories(id)
             """)
 
+        try db.execute(sql: """
+            CREATE INDEX activity_sessions_category_id
+            ON activity_sessions(category_id)
+            """)
+
         // Seed: Coding
         try db.execute(sql: """
             INSERT INTO categories (name, color_hex, is_productive) VALUES ('Coding', '#5B8CFF', 2)
