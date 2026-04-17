@@ -59,23 +59,15 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("By Category")
                 .font(.headline)
-            HStack(alignment: .top, spacing: 24) {
-                CategoryDonutChart(breakdown: aggregate.categoryBreakdown)
-                    .frame(width: 180, height: 180)
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(aggregate.categoryBreakdown, id: \.category.name) { entry in
-                        HStack {
-                            Circle()
-                                .fill(Color(hex: entry.category.colorHex) ?? .gray)
-                                .frame(width: 10, height: 10)
-                            Text(entry.category.name)
-                                .font(.callout)
-                            Spacer()
-                            Text(DurationFormatter.string(from: entry.totalSeconds))
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
+            let maxSeconds = aggregate.categoryBreakdown.first?.totalSeconds ?? 1
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(aggregate.categoryBreakdown, id: \.category.name) { entry in
+                    CategoryBarRow(
+                        name: entry.category.name,
+                        colorHex: entry.category.colorHex,
+                        seconds: entry.totalSeconds,
+                        maxSeconds: maxSeconds
+                    )
                 }
             }
         }
@@ -87,14 +79,7 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Today's Timeline")
                 .font(.headline)
-            if aggregate.hourlyBreakdown.isEmpty {
-                Text("No activity recorded yet")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            } else {
-                HourlyTimelineChart(hourlyBreakdown: aggregate.hourlyBreakdown)
-                    .frame(height: 120)
-            }
+            HourlyTierChart(hourlyTierBreakdown: aggregate.hourlyTierBreakdown)
         }
     }
 
