@@ -8,22 +8,22 @@ struct FocusLensApp: App {
     var body: some Scene {
         MenuBarExtra("FocusLens", systemImage: "eye") {
             MenuBarView(aggregate: aggregate, tracker: tracker)
+                .task {
+                    await tracker.setCallbacks(
+                        onSessionEnded: { [aggregate] in
+                            Task { @MainActor in aggregate.refreshStats() }
+                        },
+                        onStateChanged: { [aggregate] name, paused in
+                            Task { @MainActor in
+                                aggregate.currentAppName = name
+                                aggregate.isPaused = paused
+                            }
+                        }
+                    )
+                    LoginItemManager.registerAtLogin()
+                    await tracker.start()
+                }
         }
         .menuBarExtraStyle(.window)
-        .task {
-            await tracker.setCallbacks(
-                onSessionEnded: { [aggregate] in
-                    Task { @MainActor in aggregate.refreshStats() }
-                },
-                onStateChanged: { [aggregate] name, paused in
-                    Task { @MainActor in
-                        aggregate.currentAppName = name
-                        aggregate.isPaused = paused
-                    }
-                }
-            )
-            LoginItemManager.registerAtLogin()
-            await tracker.start()
-        }
     }
 }

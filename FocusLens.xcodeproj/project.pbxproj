@@ -216,6 +216,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				DA0000000000000000000002 /* PBXTargetDependency */,
 			);
 			name = FocusLensTests;
 			productName = FocusLensTests;
@@ -223,6 +224,24 @@
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		DA0000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CA0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4A0000000000000000000001;
+			remoteInfo = FocusLens;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		DA0000000000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4A0000000000000000000001 /* FocusLens */;
+			targetProxy = DA0000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		CA0000000000000000000001 /* Project object */ = {
