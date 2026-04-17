@@ -82,6 +82,12 @@ struct ActivitySessionStore {
         }
     }
 
+    func delete(id: Int64) throws {
+        try dbPool.write { db in
+            try ActivitySession.filter(ActivitySession.Columns.id == id).deleteAll(db)
+        }
+    }
+
     private func todayMidnightISO() -> String {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "UTC")!
