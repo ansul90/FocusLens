@@ -31,6 +31,8 @@
 		2A0000000000000000000016 /* CategoryRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000019 /* CategoryRule.swift */; };
 		2A0000000000000000000017 /* Migration002_Categories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000001A /* Migration002_Categories.swift */; };
 		2A0000000000000000000018 /* CategoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000001B /* CategoryStore.swift */; };
+		2A0000000000000000000019 /* CategorizationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000001C /* CategorizationEngine.swift */; };
+		2A000000000000000000001A /* CategorizationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000001D /* CategorizationEngineTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -61,6 +63,8 @@
 		1A0000000000000000000019 /* CategoryRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryRule.swift; sourceTree = "<group>"; };
 		1A000000000000000000001A /* Migration002_Categories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration002_Categories.swift; sourceTree = "<group>"; };
 		1A000000000000000000001B /* CategoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryStore.swift; sourceTree = "<group>"; };
+		1A000000000000000000001C /* CategorizationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategorizationEngine.swift; sourceTree = "<group>"; };
+		1A000000000000000000001D /* CategorizationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategorizationEngineTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -154,6 +158,7 @@
 				1A000000000000000000000B /* ActivityTracker.swift */,
 				1A000000000000000000000C /* IdleDetector.swift */,
 				1A000000000000000000000D /* PermissionManager.swift */,
+				1A000000000000000000001C /* CategorizationEngine.swift */,
 			);
 			path = Tracking;
 			sourceTree = "<group>";
@@ -182,6 +187,7 @@
 				1A0000000000000000000012 /* ActivityTrackerTests.swift */,
 				1A0000000000000000000013 /* IdleDetectorTests.swift */,
 				1A0000000000000000000014 /* DurationFormatterTests.swift */,
+				1A000000000000000000001D /* CategorizationEngineTests.swift */,
 			);
 			path = FocusLensTests;
 			sourceTree = "<group>";
@@ -329,6 +335,7 @@
 				2A0000000000000000000016 /* CategoryRule.swift in Sources */,
 				2A0000000000000000000017 /* Migration002_Categories.swift in Sources */,
 				2A0000000000000000000018 /* CategoryStore.swift in Sources */,
+				2A0000000000000000000019 /* CategorizationEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -339,6 +346,7 @@
 				2A0000000000000000000011 /* ActivityTrackerTests.swift in Sources */,
 				2A0000000000000000000012 /* IdleDetectorTests.swift in Sources */,
 				2A0000000000000000000013 /* DurationFormatterTests.swift in Sources */,
+				2A000000000000000000001A /* CategorizationEngineTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
