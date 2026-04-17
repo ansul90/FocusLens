@@ -4,14 +4,18 @@ import SwiftUI
 struct FocusLensApp: App {
     @State private var aggregate = TodayAggregate()
     private let tracker = ActivityTracker()
+    private let categorizationEngine = CategorizationEngine()
 
     var body: some Scene {
         MenuBarExtra("FocusLens", systemImage: "eye") {
             MenuBarView(aggregate: aggregate, tracker: tracker)
                 .task {
                     await tracker.setCallbacks(
-                        onSessionEnded: { [aggregate] in
-                            Task { @MainActor in aggregate.refreshStats() }
+                        onSessionEnded: { [aggregate, categorizationEngine] in
+                            Task.detached {
+                                try? categorizationEngine.batchCategorize()
+                                await MainActor.run { aggregate.refreshStats() }
+                            }
                         },
                         onStateChanged: { [aggregate] name, paused in
                             Task { @MainActor in
@@ -22,7 +26,10 @@ struct FocusLensApp: App {
                     )
                     LoginItemManager.registerAtLogin()
                     await tracker.start()
-                    Task { @MainActor in aggregate.refreshStats() }
+                    Task.detached { [aggregate, categorizationEngine] in
+                        try? categorizationEngine.batchCategorize()
+                        await MainActor.run { aggregate.refreshStats() }
+                    }
                 }
         }
         .menuBarExtraStyle(.window)
