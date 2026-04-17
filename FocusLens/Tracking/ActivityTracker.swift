@@ -5,6 +5,7 @@ actor ActivityTracker {
     private(set) var isPaused: Bool = false
     private(set) var currentAppName: String = ""
     var onSessionEnded: (@Sendable () -> Void)?
+    var onStateChanged: (@Sendable (String, Bool) -> Void)?
 
     private var currentSession: ActivitySession? = nil
     private var notificationObservers: [NSObjectProtocol] = []
@@ -25,6 +26,14 @@ actor ActivityTracker {
         self.permissionManager = permissionManager
     }
 
+    func setCallbacks(
+        onSessionEnded: @escaping @Sendable () -> Void,
+        onStateChanged: @escaping @Sendable (String, Bool) -> Void
+    ) {
+        self.onSessionEnded = onSessionEnded
+        self.onStateChanged = onStateChanged
+    }
+
     func start() async {
         await recoverOpenSessions()
         registerNotifications()
@@ -35,11 +44,13 @@ actor ActivityTracker {
 
     func pause() async {
         isPaused = true
+        onStateChanged?(currentAppName, isPaused)
         await closeCurrentSession()
     }
 
     func resume() async {
         isPaused = false
+        onStateChanged?(currentAppName, isPaused)
         await handleAppActivation(NSWorkspace.shared.frontmostApplication)
     }
 
@@ -125,6 +136,7 @@ actor ActivityTracker {
         )
         currentSession = try? store.insert(session)
         currentAppName = name
+        onStateChanged?(currentAppName, isPaused)
     }
 
     private func openIdleSession(for app: NSRunningApplication) async {
@@ -144,6 +156,7 @@ actor ActivityTracker {
         )
         currentSession = try? store.insert(session)
         currentAppName = name
+        onStateChanged?(currentAppName, isPaused)
     }
 
     private func closeCurrentSession() async {
