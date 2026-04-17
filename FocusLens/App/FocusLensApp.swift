@@ -12,12 +12,13 @@ struct FocusLensApp: App {
             MenuBarView(aggregate: aggregate, tracker: tracker)
                 .task {
                     await tracker.setCallbacks(
-                        onSessionEnded: { [aggregate, categorizationEngine, browserClassifier] in
+                        onSessionEnded: { [aggregate, categorizationEngine] in
                             Task.detached {
                                 try? categorizationEngine.batchCategorize()
-                                if GeminiSettings().hasValidKey {
-                                    try? await browserClassifier.classifyPending()
-                                }
+                                // Gemini classification on session-end disabled; runs at app launch only
+//                                if GeminiSettings().hasValidKey {
+//                                    try? await browserClassifier.classifyPending()
+//                                }
                                 await aggregate.refreshStats()
                             }
                         },
@@ -30,11 +31,12 @@ struct FocusLensApp: App {
                     )
                     LoginItemManager.registerAtLogin()
                     await tracker.start()
-                    Task.detached { [aggregate, categorizationEngine, browserClassifier] in
+                    Task.detached { [aggregate, categorizationEngine] in
                         try? categorizationEngine.batchCategorize()
-                        if GeminiSettings().hasValidKey {
-                            try? await browserClassifier.classifyPending()
-                        }
+                        // Gemini classification on app-launch disabled; runs only on manual Reclassify Now
+//                        if GeminiSettings().hasValidKey {
+//                            try? await browserClassifier.classifyPending()
+//                        }
                         await aggregate.refreshStats()
                     }
                 }

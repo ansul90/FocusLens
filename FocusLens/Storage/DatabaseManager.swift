@@ -19,6 +19,7 @@ final class DatabaseManager: @unchecked Sendable {
             migrator.registerMigration(Migration001_Sessions.identifier, migrate: Migration001_Sessions.migrate)
             migrator.registerMigration(Migration002_Categories.identifier, migrate: Migration002_Categories.migrate)
             migrator.registerMigration(Migration003_SeedRules.identifier, migrate: Migration003_SeedRules.migrate)
+            migrator.registerMigration(Migration004_FixAITools.identifier, migrate: Migration004_FixAITools.migrate)
             try migrator.migrate(pool)
             try pool.write { try $0.execute(sql: "PRAGMA journal_mode=WAL") }
             dbPool = pool

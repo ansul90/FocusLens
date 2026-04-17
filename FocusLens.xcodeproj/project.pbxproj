@@ -38,6 +38,7 @@
 		2A000000000000000000001D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000020 /* SettingsView.swift */; };
 		2A000000000000000000001E /* CategorySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000021 /* CategorySettingsView.swift */; };
 		2A000000000000000000001F /* Migration003_SeedRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000022 /* Migration003_SeedRules.swift */; };
+		2A000000000000000000002B /* Migration004_FixAITools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000002E /* Migration004_FixAITools.swift */; };
 		2A0000000000000000000020 /* BrowserBundleIds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000023 /* BrowserBundleIds.swift */; };
 		2A0000000000000000000021 /* GeminiSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000024 /* GeminiSettings.swift */; };
 		2A0000000000000000000022 /* GeminiPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000025 /* GeminiPrompt.swift */; };
@@ -86,6 +87,7 @@
 		1A0000000000000000000020 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		1A0000000000000000000021 /* CategorySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategorySettingsView.swift; sourceTree = "<group>"; };
 		1A0000000000000000000022 /* Migration003_SeedRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration003_SeedRules.swift; sourceTree = "<group>"; };
+		1A000000000000000000002E /* Migration004_FixAITools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration004_FixAITools.swift; sourceTree = "<group>"; };
 		1A0000000000000000000023 /* BrowserBundleIds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserBundleIds.swift; sourceTree = "<group>"; };
 		1A0000000000000000000024 /* GeminiSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiSettings.swift; sourceTree = "<group>"; };
 		1A0000000000000000000025 /* GeminiPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiPrompt.swift; sourceTree = "<group>"; };
@@ -182,6 +184,7 @@
 				1A000000000000000000000A /* Migration001_Sessions.swift */,
 				1A000000000000000000001A /* Migration002_Categories.swift */,
 				1A0000000000000000000022 /* Migration003_SeedRules.swift */,
+				1A000000000000000000002E /* Migration004_FixAITools.swift */,
 			);
 			path = Migrations;
 			sourceTree = "<group>";
@@ -391,6 +394,7 @@
 				2A0000000000000000000016 /* CategoryRule.swift in Sources */,
 				2A0000000000000000000017 /* Migration002_Categories.swift in Sources */,
 				2A000000000000000000001F /* Migration003_SeedRules.swift in Sources */,
+				2A000000000000000000002B /* Migration004_FixAITools.swift in Sources */,
 				2A0000000000000000000018 /* CategoryStore.swift in Sources */,
 				2A0000000000000000000019 /* CategorizationEngine.swift in Sources */,
 				2A000000000000000000001B /* DashboardView.swift in Sources */,
