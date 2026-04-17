@@ -48,11 +48,12 @@ struct BrowserCategoryMapperTests {
         #expect(mapper.resolve(label: "Nonexistent", tier: 0) == 5)
     }
 
-    @Test("Browser fallback used when no exact match and no valid ids except Browser")
+    @Test("Browser fallback used when all non-Browser categories have nil ids")
     func browserFallback() {
+        // nil-id categories are skipped in tier fallback (step 2), so step 3 (browserFallbackId) fires
+        let nilId = Category(id: nil, name: "Misc", colorHex: "#000", productivityScore: 0)
         let browser = cat(id: 3, name: "Browser", score: 0)
-        let mapper = BrowserCategoryMapper(existing: [browser])
-        // Only one category — it's Browser. "News" doesn't exist but nearest tier is also Browser (score 0, tier 0)
+        let mapper = BrowserCategoryMapper(existing: [nilId, browser])
         #expect(mapper.resolve(label: "News", tier: 0) == 3)
     }
 }

@@ -76,8 +76,9 @@ struct GeminiClientTests {
         let error = try await #require(throws: (any Error).self) {
             try await client.classify(batch)
         }
-        if case GeminiError.missingKey = error { } else {
+        guard case GeminiError.missingKey = error else {
             Issue.record("Expected GeminiError.missingKey, got \(error)")
+            return
         }
     }
 
@@ -90,8 +91,9 @@ struct GeminiClientTests {
         let error = try await #require(throws: (any Error).self) {
             try await client.classify(batch)
         }
-        if case GeminiError.missingKey = error { } else {
+        guard case GeminiError.missingKey = error else {
             Issue.record("Expected GeminiError.missingKey, got \(error)")
+            return
         }
     }
 
@@ -107,8 +109,9 @@ struct GeminiClientTests {
         let error = try await #require(throws: (any Error).self) {
             try await client.classify(batch)
         }
-        if case GeminiError.httpStatus(401) = error { } else {
+        guard case GeminiError.httpStatus(401) = error else {
             Issue.record("Expected GeminiError.httpStatus(401), got \(error)")
+            return
         }
     }
 
@@ -124,8 +127,9 @@ struct GeminiClientTests {
         let error = try await #require(throws: (any Error).self) {
             try await client.classify(batch)
         }
-        if case GeminiError.invalidResponse = error { } else {
+        guard case GeminiError.invalidResponse = error else {
             Issue.record("Expected GeminiError.invalidResponse, got \(error)")
+            return
         }
     }
 
@@ -161,8 +165,9 @@ struct GeminiClientTests {
         let error = try await #require(throws: (any Error).self) {
             try await client.classify(batch)
         }
-        if case GeminiError.decoding = error { } else {
+        guard case GeminiError.decoding = error else {
             Issue.record("Expected GeminiError.decoding, got \(error)")
+            return
         }
     }
 }

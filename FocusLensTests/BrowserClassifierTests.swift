@@ -91,20 +91,22 @@ struct BrowserClassifierTests {
         let pool = try makeTestPool()
         let browserId = try insertCategory(pool, name: "Browser", score: 0)
         let devId = try insertCategory(pool, name: "Development", score: 2)
+        // A distinct category for Xcode so its "unchanged" assertion can't accidentally pass
+        let codingId = try insertCategory(pool, name: "Coding", score: 2)
 
-        // Browser session with title → should be reclassified
+        // Browser session with title → should be reclassified to Development
         let sessionId = try insertSession(
             pool,
             bundleId: "com.google.Chrome",
             title: "GitHub - foo/bar",
             categoryId: browserId
         )
-        // Xcode session → must NOT be touched (not in Browser category)
+        // Xcode session (not a browser bundle) → must NOT be touched by classifier
         let xcodeId = try insertSession(
             pool,
             bundleId: "com.apple.dt.Xcode",
             title: "Xcode",
-            categoryId: devId
+            categoryId: codingId
         )
 
         let classification = try makeClassification(id: 0, category: "Development", tier: 2)
@@ -116,7 +118,7 @@ struct BrowserClassifierTests {
         let updated = try await classifier.classifyPending()
         #expect(updated == 1)
         #expect(try fetchCategoryId(pool, sessionId: sessionId) == devId)
-        #expect(try fetchCategoryId(pool, sessionId: xcodeId) == devId) // unchanged
+        #expect(try fetchCategoryId(pool, sessionId: xcodeId) == codingId) // unchanged — distinct from devId
     }
 
     @Test("classifyPending skips sessions with nil window_title")
