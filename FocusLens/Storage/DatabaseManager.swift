@@ -12,7 +12,9 @@ final class DatabaseManager: @unchecked Sendable {
                 at: AppConstants.appSupportDirectory,
                 withIntermediateDirectories: true
             )
-            let pool = try DatabasePool(path: AppConstants.databaseURL.path)
+            var config = Configuration()
+            config.busyMode = .timeout(5)
+            let pool = try DatabasePool(path: AppConstants.databaseURL.path, configuration: config)
             var migrator = DatabaseMigrator()
             migrator.registerMigration(Migration001_Sessions.identifier, migrate: Migration001_Sessions.migrate)
             try migrator.migrate(pool)

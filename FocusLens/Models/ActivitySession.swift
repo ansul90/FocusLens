@@ -11,6 +11,17 @@ struct ActivitySession: Codable, Identifiable, Hashable, Sendable {
     let durationSeconds: Double?
     let isIdle: Bool
 
+    enum CodingKeys: String, CodingKey {
+        case id
+        case appBundleId = "app_bundle_id"
+        case appName = "app_name"
+        case windowTitle = "window_title"
+        case startedAt = "started_at"
+        case endedAt = "ended_at"
+        case durationSeconds = "duration_seconds"
+        case isIdle = "is_idle"
+    }
+
     var isActive: Bool { endedAt == nil }
 
     var displayDuration: TimeInterval {
