@@ -1,19 +1,23 @@
 import SwiftUI
 
-// MARK: - Connection status
+// MARK: - Status enums
 
 private enum ConnectionStatus {
-    case idle
-    case testing
-    case success
-    case failure(String)
+    case idle, testing, success, failure(String)
+}
+
+private enum ReclassifyStatus {
+    case idle, running, done(Int), failure(String)
 }
 
 // MARK: - View
 
 struct AISettingsView: View {
     @State private var settings = GeminiSettings()
-    @State private var status: ConnectionStatus = .idle
+    @State private var connectionStatus: ConnectionStatus = .idle
+    @State private var reclassifyStatus: ReclassifyStatus = .idle
+
+    private let classifier = BrowserClassifier()
 
     var body: some View {
         Form {
@@ -34,8 +38,22 @@ struct AISettingsView: View {
                         }
                         .disabled(!settings.hasValidKey || isTestInFlight)
 
-                        statusIndicator
+                        connectionIndicator
                     }
+                }
+
+                Section("Classification") {
+                    HStack {
+                        Button("Reclassify Now") {
+                            runReclassify()
+                        }
+                        .disabled(!settings.hasValidKey || isReclassifyInFlight)
+
+                        reclassifyIndicator
+                    }
+                    Text("Re-runs Gemini on all browser sessions still categorised as \"Browser\".")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
@@ -46,18 +64,22 @@ struct AISettingsView: View {
     // MARK: - Computed helpers
 
     private var isTestInFlight: Bool {
-        if case .testing = status { return true }
+        if case .testing = connectionStatus { return true }
+        return false
+    }
+
+    private var isReclassifyInFlight: Bool {
+        if case .running = reclassifyStatus { return true }
         return false
     }
 
     @ViewBuilder
-    private var statusIndicator: some View {
-        switch status {
+    private var connectionIndicator: some View {
+        switch connectionStatus {
         case .idle:
             EmptyView()
         case .testing:
-            ProgressView()
-                .controlSize(.small)
+            ProgressView().controlSize(.small)
         case .success:
             Label("Connection successful", systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
@@ -67,19 +89,49 @@ struct AISettingsView: View {
         }
     }
 
+    @ViewBuilder
+    private var reclassifyIndicator: some View {
+        switch reclassifyStatus {
+        case .idle:
+            EmptyView()
+        case .running:
+            ProgressView().controlSize(.small)
+        case .done(let count):
+            Label(
+                count == 0 ? "Nothing to reclassify" : "Reclassified \(count) session\(count == 1 ? "" : "s")",
+                systemImage: count == 0 ? "checkmark.circle" : "checkmark.circle.fill"
+            )
+            .foregroundStyle(count == 0 ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.green))
+        case .failure(let message):
+            Label(message, systemImage: "xmark.circle.fill")
+                .foregroundStyle(.red)
+        }
+    }
+
     // MARK: - Actions
 
     private func runConnectionTest() {
-        status = .testing
+        connectionStatus = .testing
         let snapshot = settings
         Task { @MainActor in
             do {
                 let client = GeminiClient(settings: snapshot)
-                let request = GeminiBatchRequest(items: [.init(id: 0, title: "GitHub")])
-                _ = try await client.classify(request)
-                status = .success
+                _ = try await client.classify(GeminiBatchRequest(items: [.init(id: 0, title: "GitHub")]))
+                connectionStatus = .success
             } catch {
-                status = .failure(humanReadable(error))
+                connectionStatus = .failure(humanReadable(error))
+            }
+        }
+    }
+
+    private func runReclassify() {
+        reclassifyStatus = .running
+        Task { @MainActor in
+            do {
+                let count = try await classifier.classifyPending()
+                reclassifyStatus = .done(count)
+            } catch {
+                reclassifyStatus = .failure(humanReadable(error))
             }
         }
     }
