@@ -26,5 +26,15 @@ struct FocusLensApp: App {
                 }
         }
         .menuBarExtraStyle(.window)
+
+        Window("Dashboard", id: "dashboard") {
+            DashboardView()
+        }
+        .defaultSize(width: 680, height: 520)
+
+        Window("Settings", id: "settings") {
+            SettingsView()
+        }
+        .defaultSize(width: 540, height: 420)
     }
 }

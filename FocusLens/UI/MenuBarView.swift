@@ -4,6 +4,7 @@ struct MenuBarView: View {
     let aggregate: TodayAggregate
     let tracker: ActivityTracker
 
+    @Environment(\.openWindow) private var openWindow
     @State private var tickCount = 0
     private let timer = Timer.publish(every: AppConstants.menuRefreshIntervalSeconds, on: .main, in: .common).autoconnect()
 
@@ -59,20 +60,36 @@ struct MenuBarView: View {
     }
 
     private var controlsSection: some View {
-        HStack {
-            Button(aggregate.isPaused ? "Resume" : "Pause") {
-                Task {
-                    if aggregate.isPaused {
-                        await tracker.resume()
-                    } else {
-                        await tracker.pause()
-                    }
+        VStack(spacing: 0) {
+            HStack {
+                Button("Dashboard") {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openWindow(id: "dashboard")
+                }
+                Spacer()
+                Button("Settings") {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openWindow(id: "settings")
                 }
             }
-            Spacer()
-            Button("Quit") { NSApplication.shared.terminate(nil) }
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
+            HStack {
+                Button(aggregate.isPaused ? "Resume" : "Pause") {
+                    Task {
+                        if aggregate.isPaused {
+                            await tracker.resume()
+                        } else {
+                            await tracker.pause()
+                        }
+                    }
+                }
+                Spacer()
+                Button("Quit") { NSApplication.shared.terminate(nil) }
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 8)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
     }
 }
