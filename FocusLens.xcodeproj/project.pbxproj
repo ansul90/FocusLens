@@ -48,6 +48,7 @@
 		2A0000000000000000000027 /* BrowserCategoryMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000002A /* BrowserCategoryMapperTests.swift */; };
 		2A0000000000000000000028 /* GeminiClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000002B /* GeminiClientTests.swift */; };
 		2A0000000000000000000029 /* BrowserClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000002C /* BrowserClassifierTests.swift */; };
+		2A000000000000000000002A /* AISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000002D /* AISettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -95,6 +96,7 @@
 		1A000000000000000000002A /* BrowserCategoryMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserCategoryMapperTests.swift; sourceTree = "<group>"; };
 		1A000000000000000000002B /* GeminiClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiClientTests.swift; sourceTree = "<group>"; };
 		1A000000000000000000002C /* BrowserClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserClassifierTests.swift; sourceTree = "<group>"; };
+		1A000000000000000000002D /* AISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -204,6 +206,7 @@
 				1A000000000000000000001F /* DashboardCharts.swift */,
 				1A0000000000000000000020 /* SettingsView.swift */,
 				1A0000000000000000000021 /* CategorySettingsView.swift */,
+				1A000000000000000000002D /* AISettingsView.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -400,6 +403,7 @@
 				2A0000000000000000000023 /* GeminiClient.swift in Sources */,
 				2A0000000000000000000024 /* BrowserCategoryMapper.swift in Sources */,
 				2A0000000000000000000025 /* BrowserClassifier.swift in Sources */,
+				2A000000000000000000002A /* AISettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -10,6 +10,8 @@ struct SettingsView: View {
                 .tabItem { Label("Categories", systemImage: "tag") }
             NeverTrackTab()
                 .tabItem { Label("Never Track", systemImage: "eye.slash") }
+            AISettingsView()
+                .tabItem { Label("AI", systemImage: "sparkles") }
         }
         .frame(minWidth: 520, minHeight: 380)
         .padding(8)
