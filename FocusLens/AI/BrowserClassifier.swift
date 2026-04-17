@@ -49,8 +49,9 @@ struct BrowserClassifier {
                 .filter(ActivitySession.Columns.endedAt != nil)
                 .filter(ActivitySession.Columns.isIdle == false)
                 .filter(ActivitySession.Columns.categoryId == browserCategoryId)
-                .filter(sql: "app_bundle_id IN (\(BrowserBundleIds.all.map { "'\($0)'" }.joined(separator: ",")))")
-                .filter(sql: "window_title IS NOT NULL AND window_title != ''")
+                .filter(BrowserBundleIds.all.contains(ActivitySession.Columns.appBundleId))
+                .filter(ActivitySession.Columns.windowTitle != nil)
+                .filter(sql: "window_title != ''")
                 .fetchAll(db)
         }
 
