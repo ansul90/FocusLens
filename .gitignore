@@ -1,0 +1,29 @@
+# Xcode
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+*.resolved
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+*.icloud
+
+# Worktrees (global location — not project-local)
+# No entry needed; worktrees are at ~/.config/superpowers/worktrees/
+
+# Instruments
+*.trace
+
+# Archives
+*.xcarchive
