@@ -119,6 +119,28 @@ struct ActivitySessionStore {
         }
     }
 
+    func fetchTodayHourlyTierBreakdown() throws -> [(hour: Int, tier: Int, seconds: Double)] {
+        let midnight = todayMidnightISO()
+        return try dbPool.read { db in
+            let rows = try Row.fetchAll(
+                db,
+                sql: """
+                    SELECT
+                        CAST(strftime('%H', a.started_at) AS INTEGER) as hour,
+                        COALESCE(c.is_productive, 0) as tier,
+                        COALESCE(SUM(a.duration_seconds), 0) as total
+                    FROM activity_sessions a
+                    LEFT JOIN categories c ON a.category_id = c.id
+                    WHERE a.started_at >= ? AND a.is_idle = 0 AND a.ended_at IS NOT NULL
+                    GROUP BY hour, tier
+                    ORDER BY hour, tier
+                    """,
+                arguments: [midnight]
+            )
+            return rows.map { (hour: $0["hour"], tier: $0["tier"], seconds: $0["total"]) }
+        }
+    }
+
     func delete(id: Int64) throws {
         try dbPool.write { db in
             try ActivitySession.filter(ActivitySession.Columns.id == id).deleteAll(db)

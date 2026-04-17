@@ -9,6 +9,8 @@ final class TodayAggregate {
     private(set) var categoryBreakdown: [(category: Category, totalSeconds: Double)] = []
     private(set) var productivityScore: Int = 50
     private(set) var hourlyBreakdown: [(hour: Int, seconds: Double)] = []
+    private(set) var productivityTierBreakdown: [(tier: Int, seconds: Double)] = []
+    private(set) var hourlyTierBreakdown: [(hour: Int, tier: Int, seconds: Double)] = []
     var currentAppName: String = ""
     var isPaused: Bool = false
 
@@ -24,6 +26,7 @@ final class TodayAggregate {
         topApps = (try? store.fetchTodayTopApps(limit: 10)) ?? []
         totalActiveSeconds = (try? store.fetchTodayActiveSeconds()) ?? 0
         hourlyBreakdown = (try? store.fetchTodayHourlyBreakdown()) ?? []
+        hourlyTierBreakdown = (try? store.fetchTodayHourlyTierBreakdown()) ?? []
         refreshCategoryBreakdown()
     }
 
@@ -32,6 +35,7 @@ final class TodayAggregate {
               let categories = try? categoryStore.fetchAllCategories() else {
             categoryBreakdown = []
             productivityScore = 50
+            productivityTierBreakdown = []
             return
         }
 
@@ -54,6 +58,14 @@ final class TodayAggregate {
         }
 
         categoryBreakdown = breakdown.sorted { $0.totalSeconds > $1.totalSeconds }
+
+        var tierMap: [Int: Double] = [:]
+        for entry in breakdown {
+            let tier = entry.category.productivityScore
+            tierMap[tier, default: 0] += entry.totalSeconds
+        }
+        productivityTierBreakdown = tierMap.map { (tier: $0.key, seconds: $0.value) }
+            .sorted { $0.tier > $1.tier }
 
         // Productivity score: map weighted average from [-2,+2] to [0,100]
         if categorizedTotal > 0 {
