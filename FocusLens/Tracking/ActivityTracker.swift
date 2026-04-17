@@ -13,6 +13,7 @@ actor ActivityTracker {
     private let neverTrackStore: NeverTrackStore
     private let idleDetector: IdleDetector
     private let permissionManager: PermissionManager
+    private var isStarted: Bool = false
 
     init(
         store: ActivitySessionStore = .init(),
@@ -35,6 +36,11 @@ actor ActivityTracker {
     }
 
     func start() async {
+        guard !isStarted else { return }
+        isStarted = true
+        if !permissionManager.accessibilityGranted {
+            permissionManager.requestAccessibility()
+        }
         await recoverOpenSessions()
         registerNotifications()
         setupIdleDetectorCallbacks()
