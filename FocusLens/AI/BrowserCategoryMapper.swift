@@ -28,12 +28,12 @@ struct BrowserCategoryMapper {
             return match.id
         }
 
-        // 2. Nearest tier match (avoid mapping to nil-id categories)
-        let scored = categories.compactMap { cat -> (Int64, Int)? in
+        // 2. Nearest tier match; ties broken by lower productivityScore
+        let scored = categories.compactMap { cat -> (Int64, Int, Int)? in
             guard let id = cat.id else { return nil }
-            return (id, abs(cat.productivityScore - tier))
+            return (id, abs(cat.productivityScore - tier), cat.productivityScore)
         }
-        if let best = scored.min(by: { $0.1 < $1.1 }) {
+        if let best = scored.min(by: { $0.1 != $1.1 ? $0.1 < $1.1 : $0.2 < $1.2 }) {
             return best.0
         }
 
