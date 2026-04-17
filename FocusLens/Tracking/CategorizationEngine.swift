@@ -1,5 +1,8 @@
 import Foundation
 import GRDB
+import os
+
+private let logger = Logger(subsystem: "com.focuslens.app", category: "CategorizationEngine")
 
 struct CategorizationEngine {
     private let store: CategoryStore
@@ -10,9 +13,16 @@ struct CategorizationEngine {
 
     // Returns the best-matching Category for a given session, or nil if no rule matches.
     func categorize(bundleId: String, windowTitle: String?) -> Category? {
-        guard let rules = try? store.fetchAllRulesOrdered() else { return nil }
-        guard let categories = try? store.fetchAllCategories() else { return nil }
-        let categoryMap = Dictionary(uniqueKeysWithValues: categories.compactMap { c -> (Int64, Category)? in
+        let rules: [CategoryRule]
+        let allCategories: [Category]
+        do {
+            rules = try store.fetchAllRulesOrdered()
+            allCategories = try store.fetchAllCategories()
+        } catch {
+            logger.error("Failed to load rules/categories: \(error)")
+            return nil
+        }
+        let categoryMap = Dictionary(uniqueKeysWithValues: allCategories.compactMap { c -> (Int64, Category)? in
             guard let id = c.id else { return nil }
             return (id, c)
         })
@@ -22,6 +32,13 @@ struct CategorizationEngine {
         }
         return categoryMap[matchedRule.categoryId]
     }
+
+    private static let grdbDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        f.timeZone = TimeZone(identifier: "UTC")!
+        return f
+    }()
 
     // Categorizes all completed sessions that have no category yet.
     // Returns the number of sessions updated.
@@ -44,22 +61,19 @@ struct CategorizationEngine {
         }
 
         var count = 0
-        for session in uncategorized {
-            guard let id = session.id else { continue }
-            guard let matchedRule = CategorizationEngine.bestMatch(
-                rules: rules,
-                bundleId: session.appBundleId,
-                windowTitle: session.windowTitle
-            ) else { continue }
-            guard categoryMap[matchedRule.categoryId] != nil else { continue }
-            let categoryId = matchedRule.categoryId
-            try pool.write { db in
+        try pool.write { db in
+            for session in uncategorized {
+                guard let id = session.id else { continue }
+                guard let matchedRule = CategorizationEngine.bestMatch(
+                    rules: rules, bundleId: session.appBundleId, windowTitle: session.windowTitle
+                ) else { continue }
+                guard categoryMap[matchedRule.categoryId] != nil else { continue }
                 try db.execute(
                     sql: "UPDATE activity_sessions SET category_id = ? WHERE id = ?",
-                    arguments: [categoryId, id]
+                    arguments: [matchedRule.categoryId, id]
                 )
+                count += 1
             }
-            count += 1
         }
         return count
     }
@@ -76,10 +90,7 @@ struct CategorizationEngine {
         })
 
         let pool = DatabaseManager.shared.dbPool
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-        fmt.timeZone = TimeZone(identifier: "UTC")!
-        let sinceStr = fmt.string(from: date)
+        let sinceStr = CategorizationEngine.grdbDateFormatter.string(from: date)
 
         let sessions: [ActivitySession] = try pool.read { db in
             try ActivitySession
@@ -90,21 +101,19 @@ struct CategorizationEngine {
         }
 
         var count = 0
-        for session in sessions {
-            guard let id = session.id else { continue }
-            let matchedRule = CategorizationEngine.bestMatch(
-                rules: rules,
-                bundleId: session.appBundleId,
-                windowTitle: session.windowTitle
-            )
-            let categoryId: Int64? = matchedRule.flatMap { categoryMap[$0.categoryId] != nil ? $0.categoryId : nil }
-            try pool.write { db in
+        try pool.write { db in
+            for session in sessions {
+                guard let id = session.id else { continue }
+                let matchedRule = CategorizationEngine.bestMatch(
+                    rules: rules, bundleId: session.appBundleId, windowTitle: session.windowTitle
+                )
+                let categoryId: Int64? = matchedRule.flatMap { categoryMap[$0.categoryId] != nil ? $0.categoryId : nil }
                 try db.execute(
                     sql: "UPDATE activity_sessions SET category_id = ? WHERE id = ?",
                     arguments: [categoryId, id]
                 )
+                if categoryId != nil { count += 1 }
             }
-            count += 1
         }
         return count
     }
