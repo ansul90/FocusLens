@@ -82,6 +82,43 @@ struct ActivitySessionStore {
         }
     }
 
+    func fetchTodayCategoryBreakdown() throws -> [(categoryId: Int64?, totalSeconds: Double)] {
+        let midnight = todayMidnightISO()
+        return try dbPool.read { db in
+            let rows = try Row.fetchAll(
+                db,
+                sql: """
+                    SELECT category_id, COALESCE(SUM(duration_seconds), 0) as total
+                    FROM activity_sessions
+                    WHERE started_at >= ? AND is_idle = 0 AND ended_at IS NOT NULL
+                    GROUP BY category_id
+                    ORDER BY total DESC
+                    """,
+                arguments: [midnight]
+            )
+            return rows.map { (categoryId: $0["category_id"], totalSeconds: $0["total"]) }
+        }
+    }
+
+    func fetchTodayHourlyBreakdown() throws -> [(hour: Int, seconds: Double)] {
+        let midnight = todayMidnightISO()
+        return try dbPool.read { db in
+            let rows = try Row.fetchAll(
+                db,
+                sql: """
+                    SELECT CAST(strftime('%H', started_at) AS INTEGER) as hour,
+                           COALESCE(SUM(duration_seconds), 0) as total
+                    FROM activity_sessions
+                    WHERE started_at >= ? AND is_idle = 0 AND ended_at IS NOT NULL
+                    GROUP BY hour
+                    ORDER BY hour
+                    """,
+                arguments: [midnight]
+            )
+            return rows.map { (hour: $0["hour"], seconds: $0["total"]) }
+        }
+    }
+
     func delete(id: Int64) throws {
         try dbPool.write { db in
             try ActivitySession.filter(ActivitySession.Columns.id == id).deleteAll(db)
