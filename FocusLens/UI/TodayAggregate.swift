@@ -13,6 +13,7 @@ final class TodayAggregate {
     private(set) var hourlyTierBreakdown: [(hour: Int, tier: Int, seconds: Double)] = []
     var currentAppName: String = ""
     var isPaused: Bool = false
+    private(set) var selectedDate: Date = Date()
 
     private let logger = Logger(subsystem: "com.focuslens.app", category: "TodayAggregate")
     private let store: ActivitySessionStore
@@ -21,6 +22,11 @@ final class TodayAggregate {
     init(store: ActivitySessionStore = .init(), categoryStore: CategoryStore = .init()) {
         self.store = store
         self.categoryStore = categoryStore
+    }
+
+    func selectDate(_ date: Date) async {
+        selectedDate = date
+        await refreshStats()
     }
 
     private struct FetchedSnapshot: Sendable {
@@ -32,18 +38,16 @@ final class TodayAggregate {
     }
 
     func refreshStats() async {
-        // Snapshot non-isolated refs so the detached task can capture them without crossing MainActor.
         let store = self.store
         let categoryStore = self.categoryStore
+        let date = self.selectedDate
 
-        // Run sync GRDB reads at .utility — below GRDB workers' Default QoS — to avoid priority inversion
-        // with the main thread, which is at User-interactive QoS.
         let fetched = await Task.detached(priority: .utility) { () -> FetchedSnapshot in
             FetchedSnapshot(
-                topApps: (try? store.fetchTodayTopApps(limit: 10)) ?? [],
-                totalActiveSeconds: (try? store.fetchTodayActiveSeconds()) ?? 0,
-                hourlyTierBreakdown: (try? store.fetchTodayHourlyTierBreakdown()) ?? [],
-                rawBreakdown: (try? store.fetchTodayCategoryBreakdown()) ?? [],
+                topApps: (try? store.fetchTopApps(for: date, limit: 10)) ?? [],
+                totalActiveSeconds: (try? store.fetchActiveSeconds(for: date)) ?? 0,
+                hourlyTierBreakdown: (try? store.fetchHourlyTierBreakdown(for: date)) ?? [],
+                rawBreakdown: (try? store.fetchCategoryBreakdown(for: date)) ?? [],
                 categories: (try? categoryStore.fetchAllCategories()) ?? []
             )
         }.value
@@ -91,12 +95,11 @@ final class TodayAggregate {
         productivityTierBreakdown = tierTotals.map { (tier: $0.key, seconds: $0.value) }
             .sorted { $0.tier > $1.tier }
 
-        // Productivity score: map weighted average from [-2,+2] to [0,100]
         if categorizedTotal > 0 {
-            let avg = weightedSum / categorizedTotal  // range [-2, +2]
+            let avg = weightedSum / categorizedTotal
             productivityScore = max(0, min(100, Int(((avg + 2.0) / 4.0) * 100)))
         } else {
-            productivityScore = 50  // neutral when no data
+            productivityScore = 50
         }
     }
 }

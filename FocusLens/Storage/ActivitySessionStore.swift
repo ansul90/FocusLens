@@ -38,89 +38,71 @@ struct ActivitySessionStore {
     }
 
     func fetchTodaySessions() throws -> [ActivitySession] {
-        let midnight = todayMidnightISO()
+        let (start, end) = dayBoundsISO(for: Date())
         return try dbPool.read { db in
             try ActivitySession
-                .filter(ActivitySession.Columns.startedAt >= midnight)
+                .filter(ActivitySession.Columns.startedAt >= start)
+                .filter(ActivitySession.Columns.startedAt < end)
                 .filter(ActivitySession.Columns.endedAt != nil)
                 .fetchAll(db)
         }
     }
 
-    func fetchTodayTopApps(limit: Int) throws -> [(appName: String, appBundleId: String, totalSeconds: Double)] {
-        let midnight = todayMidnightISO()
+    func fetchTopApps(for date: Date, limit: Int) throws -> [(appName: String, appBundleId: String, totalSeconds: Double)] {
+        let (start, end) = dayBoundsISO(for: date)
         return try dbPool.read { db in
             let rows = try Row.fetchAll(
                 db,
                 sql: """
                     SELECT app_name, app_bundle_id, COALESCE(SUM(duration_seconds), 0) as total
                     FROM activity_sessions
-                    WHERE started_at >= ? AND is_idle = 0 AND ended_at IS NOT NULL
+                    WHERE started_at >= ? AND started_at < ? AND is_idle = 0 AND ended_at IS NOT NULL
                     GROUP BY app_bundle_id
                     ORDER BY total DESC
                     LIMIT ?
                     """,
-                arguments: [midnight, limit]
+                arguments: [start, end, limit]
             )
             return rows.map { (appName: $0["app_name"], appBundleId: $0["app_bundle_id"], totalSeconds: $0["total"]) }
         }
     }
 
-    func fetchTodayActiveSeconds() throws -> Double {
-        let midnight = todayMidnightISO()
+    func fetchActiveSeconds(for date: Date) throws -> Double {
+        let (start, end) = dayBoundsISO(for: date)
         return try dbPool.read { db in
             let row = try Row.fetchOne(
                 db,
                 sql: """
                     SELECT COALESCE(SUM(duration_seconds), 0) as total
                     FROM activity_sessions
-                    WHERE started_at >= ? AND is_idle = 0 AND ended_at IS NOT NULL
+                    WHERE started_at >= ? AND started_at < ? AND is_idle = 0 AND ended_at IS NOT NULL
                     """,
-                arguments: [midnight]
+                arguments: [start, end]
             )
             return row?["total"] ?? 0.0
         }
     }
 
-    func fetchTodayCategoryBreakdown() throws -> [(categoryId: Int64?, totalSeconds: Double)] {
-        let midnight = todayMidnightISO()
+    func fetchCategoryBreakdown(for date: Date) throws -> [(categoryId: Int64?, totalSeconds: Double)] {
+        let (start, end) = dayBoundsISO(for: date)
         return try dbPool.read { db in
             let rows = try Row.fetchAll(
                 db,
                 sql: """
                     SELECT category_id, COALESCE(SUM(duration_seconds), 0) as total
                     FROM activity_sessions
-                    WHERE started_at >= ? AND is_idle = 0 AND ended_at IS NOT NULL
+                    WHERE started_at >= ? AND started_at < ? AND is_idle = 0 AND ended_at IS NOT NULL
                     GROUP BY category_id
                     ORDER BY total DESC
                     """,
-                arguments: [midnight]
+                arguments: [start, end]
             )
             return rows.map { (categoryId: $0["category_id"], totalSeconds: $0["total"]) }
         }
     }
 
-    func fetchTodayHourlyBreakdown() throws -> [(hour: Int, seconds: Double)] {
-        let midnight = todayMidnightISO()
-        return try dbPool.read { db in
-            let rows = try Row.fetchAll(
-                db,
-                sql: """
-                    SELECT CAST(strftime('%H', started_at, 'localtime') AS INTEGER) as hour,
-                           COALESCE(SUM(duration_seconds), 0) as total
-                    FROM activity_sessions
-                    WHERE started_at >= ? AND is_idle = 0 AND ended_at IS NOT NULL
-                    GROUP BY hour
-                    ORDER BY hour
-                    """,
-                arguments: [midnight]
-            )
-            return rows.map { (hour: $0["hour"], seconds: $0["total"]) }
-        }
-    }
-
-    func fetchTodayHourlyTierBreakdown() throws -> [(hour: Int, tier: Int, seconds: Double)] {
-        let midnight = todayMidnightISO()
+    func fetchHourlyTierBreakdown(for date: Date) throws -> [(hour: Int, tier: Int, seconds: Double)] {
+        let (start, end) = dayBoundsISO(for: date)
         return try dbPool.read { db in
             let rows = try Row.fetchAll(
                 db,
@@ -131,11 +113,11 @@ struct ActivitySessionStore {
                         COALESCE(SUM(a.duration_seconds), 0) as total
                     FROM activity_sessions a
                     LEFT JOIN categories c ON a.category_id = c.id
-                    WHERE a.started_at >= ? AND a.is_idle = 0 AND a.ended_at IS NOT NULL
+                    WHERE a.started_at >= ? AND a.started_at < ? AND a.is_idle = 0 AND a.ended_at IS NOT NULL
                     GROUP BY hour, tier
                     ORDER BY hour, tier
                     """,
-                arguments: [midnight]
+                arguments: [start, end]
             )
             return rows.map { (hour: $0["hour"], tier: $0["tier"], seconds: $0["total"]) }
         }
@@ -147,11 +129,14 @@ struct ActivitySessionStore {
         }
     }
 
-    private func todayMidnightISO() -> String {
-        let midnight = Calendar.current.startOfDay(for: Date())
+    // Returns (startOfDay, startOfNextDay) as UTC ISO strings for the given date.
+    private func dayBoundsISO(for date: Date) -> (start: String, end: String) {
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: date)
+        let end = cal.date(byAdding: .day, value: 1, to: start)!
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
         fmt.timeZone = TimeZone(identifier: "UTC")!
-        return fmt.string(from: midnight)
+        return (fmt.string(from: start), fmt.string(from: end))
     }
 }

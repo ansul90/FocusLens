@@ -11,8 +11,12 @@ struct DashboardView: View {
 
     private static let minimumBarSeconds: Double = 1.0
 
+    private var isToday: Bool {
+        Calendar.current.isDateInToday(aggregate.selectedDate)
+    }
+
     private var formattedDate: String {
-        Self.dateFormatter.string(from: Date())
+        Self.dateFormatter.string(from: aggregate.selectedDate)
     }
 
     var body: some View {
@@ -31,9 +35,50 @@ struct DashboardView: View {
     // MARK: - Date Header
 
     private var dateHeader: some View {
-        Text(formattedDate)
-            .font(.title3).bold()
-            .padding(.bottom, 12)
+        HStack(spacing: 8) {
+            Button {
+                Task { await aggregate.selectDate(
+                    Calendar.current.date(byAdding: .day, value: -1, to: aggregate.selectedDate)!
+                )}
+            } label: {
+                Image(systemName: "chevron.left")
+            }
+            .buttonStyle(.plain)
+
+            DatePicker(
+                "",
+                selection: Binding(
+                    get: { aggregate.selectedDate },
+                    set: { date in Task { await aggregate.selectDate(date) } }
+                ),
+                in: ...Date(),
+                displayedComponents: .date
+            )
+            .labelsHidden()
+            .datePickerStyle(.compact)
+
+            Button {
+                Task { await aggregate.selectDate(
+                    Calendar.current.date(byAdding: .day, value: 1, to: aggregate.selectedDate)!
+                )}
+            } label: {
+                Image(systemName: "chevron.right")
+            }
+            .buttonStyle(.plain)
+            .disabled(isToday)
+
+            Spacer()
+
+            if !isToday {
+                Button("Today") {
+                    Task { await aggregate.selectDate(Date()) }
+                }
+                .buttonStyle(.plain)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.bottom, 12)
     }
 
     // MARK: - Top Section: Gauge + Summary
@@ -53,7 +98,7 @@ struct DashboardView: View {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(DurationFormatter.string(from: aggregate.totalActiveSeconds))
                     .font(.title2).bold()
-                Text("tracked today")
+                Text("tracked")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

@@ -38,7 +38,7 @@ struct MenuBarView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
             } else {
-                ForEach(aggregate.topApps.indices, id: \.self) { i in
+                ForEach(aggregate.topApps.prefix(5).indices, id: \.self) { i in
                     let app = aggregate.topApps[i]
                     HStack {
                         Text(app.appName)
@@ -51,42 +51,64 @@ struct MenuBarView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 4)
                 }
+                if aggregate.topApps.count > 5 {
+                    Button("Open Dashboard for details") {
+                        NSApp.activate(ignoringOtherApps: true)
+                        openWindow(id: "dashboard")
+                    }
+                    .buttonStyle(.plain)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                }
             }
         }
         .padding(.vertical, 4)
     }
 
     private var controlsSection: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Button("Dashboard") {
-                    NSApp.activate(ignoringOtherApps: true)
-                    openWindow(id: "dashboard")
-                }
-                Spacer()
-                Button("Settings") {
-                    NSApp.activate(ignoringOtherApps: true)
-                    openWindow(id: "settings")
+        HStack(spacing: 0) {
+            toolbarButton(systemImage: "square.grid.2x2", tooltip: "Dashboard") {
+                NSApp.activate(ignoringOtherApps: true)
+                openWindow(id: "dashboard")
+            }
+            Divider().frame(height: 16)
+            toolbarButton(systemImage: "gearshape", tooltip: "Settings") {
+                NSApp.activate(ignoringOtherApps: true)
+                openWindow(id: "settings")
+            }
+            Divider().frame(height: 16)
+            toolbarButton(
+                systemImage: aggregate.isPaused ? "play.fill" : "pause.fill",
+                tooltip: aggregate.isPaused ? "Resume" : "Pause"
+            ) {
+                Task {
+                    if aggregate.isPaused { await tracker.resume() }
+                    else { await tracker.pause() }
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 8)
-            .padding(.bottom, 4)
-            HStack {
-                Button(aggregate.isPaused ? "Resume" : "Pause") {
-                    Task {
-                        if aggregate.isPaused {
-                            await tracker.resume()
-                        } else {
-                            await tracker.pause()
-                        }
-                    }
-                }
-                Spacer()
-                Button("Quit") { NSApplication.shared.terminate(nil) }
+            Divider().frame(height: 16)
+            toolbarButton(systemImage: "power", tooltip: "Quit FocusLens") {
+                NSApplication.shared.terminate(nil)
             }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 8)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+    }
+
+    @ViewBuilder
+    private func toolbarButton(
+        systemImage: String,
+        tooltip: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .frame(maxWidth: .infinity)
+                .frame(height: 20)
+        }
+        .buttonStyle(.plain)
+        .help(tooltip)
     }
 }
