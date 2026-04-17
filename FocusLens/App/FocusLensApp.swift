@@ -5,15 +5,19 @@ struct FocusLensApp: App {
     @State private var aggregate = TodayAggregate()
     private let tracker = ActivityTracker()
     private let categorizationEngine = CategorizationEngine()
+    private let browserClassifier = BrowserClassifier()
 
     var body: some Scene {
         MenuBarExtra("FocusLens", systemImage: "eye") {
             MenuBarView(aggregate: aggregate, tracker: tracker)
                 .task {
                     await tracker.setCallbacks(
-                        onSessionEnded: { [aggregate, categorizationEngine] in
+                        onSessionEnded: { [aggregate, categorizationEngine, browserClassifier] in
                             Task.detached {
                                 try? categorizationEngine.batchCategorize()
+                                if GeminiSettings().hasValidKey {
+                                    try? await browserClassifier.classifyPending()
+                                }
                                 await MainActor.run { aggregate.refreshStats() }
                             }
                         },
@@ -26,8 +30,11 @@ struct FocusLensApp: App {
                     )
                     LoginItemManager.registerAtLogin()
                     await tracker.start()
-                    Task.detached { [aggregate, categorizationEngine] in
+                    Task.detached { [aggregate, categorizationEngine, browserClassifier] in
                         try? categorizationEngine.batchCategorize()
+                        if GeminiSettings().hasValidKey {
+                            try? await browserClassifier.classifyPending()
+                        }
                         await MainActor.run { aggregate.refreshStats() }
                     }
                 }
