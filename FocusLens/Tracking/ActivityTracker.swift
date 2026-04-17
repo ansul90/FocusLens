@@ -8,6 +8,7 @@ actor ActivityTracker {
     var onStateChanged: (@Sendable (String, Bool) -> Void)?
 
     private var currentSession: ActivitySession? = nil
+    private var currentApp: NSRunningApplication? = nil
     private var notificationObservers: [NSObjectProtocol] = []
     private let store: ActivitySessionStore
     private let neverTrackStore: NeverTrackStore
@@ -126,9 +127,8 @@ actor ActivityTracker {
         guard let bundleId = app.bundleIdentifier else { return }
         guard (try? neverTrackStore.contains(bundleId: bundleId)) != true else { return }
 
-        let windowTitle: String? = permissionManager.accessibilityGranted
-            ? PermissionManager.windowTitle(for: app)
-            : nil
+        currentApp = app
+        let windowTitle = PermissionManager.windowTitle(for: app)
         let name = app.localizedName ?? bundleId
         let session = ActivitySession(
             id: nil,
@@ -170,12 +170,15 @@ actor ActivityTracker {
     private func closeCurrentSession() async {
         guard let session = currentSession, let id = session.id else { return }
         currentSession = nil
+        let app = currentApp
+        currentApp = nil
         let now = Date()
         let duration = now.timeIntervalSince(session.startedAt)
         if duration < AppConstants.minimumSessionSeconds {
             try? store.delete(id: id)
         } else {
-            try? store.close(id: id, at: now)
+            let title = app.flatMap { PermissionManager.windowTitle(for: $0) }
+            try? store.close(id: id, at: now, windowTitle: title)
         }
         onSessionEnded?()
     }

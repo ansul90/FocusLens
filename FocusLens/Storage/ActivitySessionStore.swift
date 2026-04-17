@@ -16,16 +16,23 @@ struct ActivitySessionStore {
         return mutable
     }
 
-    func close(id: Int64, at endDate: Date) throws {
+    func close(id: Int64, at endDate: Date, windowTitle: String? = nil) throws {
         try dbPool.write { db in
             let started = try ActivitySession
                 .filter(ActivitySession.Columns.id == id)
                 .fetchOne(db)
             let duration: Double? = started.map { endDate.timeIntervalSince($0.startedAt) }
-            try db.execute(
-                sql: "UPDATE activity_sessions SET ended_at = ?, duration_seconds = ? WHERE id = ?",
-                arguments: [endDate, duration, id]
-            )
+            if let title = windowTitle {
+                try db.execute(
+                    sql: "UPDATE activity_sessions SET ended_at = ?, duration_seconds = ?, window_title = ? WHERE id = ?",
+                    arguments: [endDate, duration, title, id]
+                )
+            } else {
+                try db.execute(
+                    sql: "UPDATE activity_sessions SET ended_at = ?, duration_seconds = ? WHERE id = ?",
+                    arguments: [endDate, duration, id]
+                )
+            }
         }
     }
 
