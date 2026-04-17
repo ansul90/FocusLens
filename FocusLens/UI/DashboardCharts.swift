@@ -35,12 +35,14 @@ struct ProductivityGaugeView: View {
     private static let arcFraction: Double = 0.75
     private static let lineWidth: CGFloat = 14
     private static let rotationDegrees: Double = 135
+    private static let scoreFontSize: CGFloat = 28
+    private static let gaugeSize: CGFloat = 120
 
     private var gaugeColor: Color {
         switch score {
-        case 75...: return .green
-        case 50..<75: return .orange
-        default: return .red
+        case 75...: return TierColors.color(for: 2)
+        case 50..<75: return TierColors.color(for: -1)
+        default: return TierColors.color(for: -2)
         }
     }
 
@@ -65,13 +67,13 @@ struct ProductivityGaugeView: View {
 
             VStack(spacing: 2) {
                 Text("\(score)")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.system(size: Self.scoreFontSize, weight: .bold, design: .rounded))
                 Text("/ 100")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(width: 120, height: 120)
+        .frame(width: Self.gaugeSize, height: Self.gaugeSize)
     }
 }
 
@@ -101,8 +103,7 @@ struct ProductivityBreakdownBar: View {
                     .clipShape(RoundedRectangle(cornerRadius: 4))
             } else {
                 HStack(spacing: 0) {
-                    ForEach(sorted.indices, id: \.self) { index in
-                        let entry = sorted[index]
+                    ForEach(sorted, id: \.tier) { entry in
                         Rectangle()
                             .fill(TierColors.color(for: entry.tier))
                             .frame(width: geometry.size.width * (entry.seconds / total))
@@ -198,8 +199,6 @@ struct HourlyTierChart: View {
         }
     }
 }
-
-// MARK: - Color(hex:) extension
 
 extension Color {
     init?(hex: String) {
