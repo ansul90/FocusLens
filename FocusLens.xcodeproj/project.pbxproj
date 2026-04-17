@@ -42,6 +42,7 @@
 		2A0000000000000000000021 /* GeminiSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000024 /* GeminiSettings.swift */; };
 		2A0000000000000000000022 /* GeminiPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000025 /* GeminiPrompt.swift */; };
 		2A0000000000000000000023 /* GeminiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000026 /* GeminiClient.swift */; };
+		2A0000000000000000000024 /* BrowserCategoryMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000027 /* BrowserCategoryMapper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -83,6 +84,7 @@
 		1A0000000000000000000024 /* GeminiSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiSettings.swift; sourceTree = "<group>"; };
 		1A0000000000000000000025 /* GeminiPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiPrompt.swift; sourceTree = "<group>"; };
 		1A0000000000000000000026 /* GeminiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiClient.swift; sourceTree = "<group>"; };
+		1A0000000000000000000027 /* BrowserCategoryMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserCategoryMapper.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -232,6 +234,7 @@
 				1A0000000000000000000024 /* GeminiSettings.swift */,
 				1A0000000000000000000025 /* GeminiPrompt.swift */,
 				1A0000000000000000000026 /* GeminiClient.swift */,
+				1A0000000000000000000027 /* BrowserCategoryMapper.swift */,
 			);
 			path = AI;
 			sourceTree = "<group>";
@@ -380,6 +383,7 @@
 				2A0000000000000000000021 /* GeminiSettings.swift in Sources */,
 				2A0000000000000000000022 /* GeminiPrompt.swift in Sources */,
 				2A0000000000000000000023 /* GeminiClient.swift in Sources */,
+				2A0000000000000000000024 /* BrowserCategoryMapper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
