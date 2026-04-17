@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import os
 
 @Observable
 @MainActor
@@ -14,6 +15,7 @@ final class TodayAggregate {
     var currentAppName: String = ""
     var isPaused: Bool = false
 
+    private let logger = Logger(subsystem: "com.focuslens.app", category: "TodayAggregate")
     private let store: ActivitySessionStore
     private let categoryStore: CategoryStore
 
@@ -26,7 +28,12 @@ final class TodayAggregate {
         topApps = (try? store.fetchTodayTopApps(limit: 10)) ?? []
         totalActiveSeconds = (try? store.fetchTodayActiveSeconds()) ?? 0
         hourlyBreakdown = (try? store.fetchTodayHourlyBreakdown()) ?? []
-        hourlyTierBreakdown = (try? store.fetchTodayHourlyTierBreakdown()) ?? []
+        do {
+            hourlyTierBreakdown = try store.fetchTodayHourlyTierBreakdown()
+        } catch {
+            logger.error("fetchTodayHourlyTierBreakdown failed: \(error)")
+            hourlyTierBreakdown = []
+        }
         refreshCategoryBreakdown()
     }
 
@@ -44,7 +51,6 @@ final class TodayAggregate {
             return (id, c)
         })
 
-        // Build breakdown for categorized sessions only
         var breakdown: [(category: Category, totalSeconds: Double)] = []
         var weightedSum: Double = 0
         var categorizedTotal: Double = 0
@@ -59,12 +65,11 @@ final class TodayAggregate {
 
         categoryBreakdown = breakdown.sorted { $0.totalSeconds > $1.totalSeconds }
 
-        var tierMap: [Int: Double] = [:]
-        for entry in breakdown {
-            let tier = entry.category.productivityScore
-            tierMap[tier, default: 0] += entry.totalSeconds
+        var tierTotals: [Int: Double] = [:]
+        for entry in hourlyTierBreakdown {
+            tierTotals[entry.tier, default: 0] += entry.seconds
         }
-        productivityTierBreakdown = tierMap.map { (tier: $0.key, seconds: $0.value) }
+        productivityTierBreakdown = tierTotals.map { (tier: $0.key, seconds: $0.value) }
             .sorted { $0.tier > $1.tier }
 
         // Productivity score: map weighted average from [-2,+2] to [0,100]
