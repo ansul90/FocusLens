@@ -27,6 +27,10 @@
 		2A0000000000000000000012 /* IdleDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000013 /* IdleDetectorTests.swift */; };
 		2A0000000000000000000013 /* DurationFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000014 /* DurationFormatterTests.swift */; };
 		2A0000000000000000000014 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = BA0000000000000000000001 /* GRDB */; };
+		2A0000000000000000000015 /* Category.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000018 /* Category.swift */; };
+		2A0000000000000000000016 /* CategoryRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000019 /* CategoryRule.swift */; };
+		2A0000000000000000000017 /* Migration002_Categories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000001A /* Migration002_Categories.swift */; };
+		2A0000000000000000000018 /* CategoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000001B /* CategoryStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -53,6 +57,10 @@
 		1A0000000000000000000015 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1A0000000000000000000016 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1A0000000000000000000017 /* FocusLens.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FocusLens.entitlements; sourceTree = "<group>"; };
+		1A0000000000000000000018 /* Category.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Category.swift; sourceTree = "<group>"; };
+		1A0000000000000000000019 /* CategoryRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryRule.swift; sourceTree = "<group>"; };
+		1A000000000000000000001A /* Migration002_Categories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration002_Categories.swift; sourceTree = "<group>"; };
+		1A000000000000000000001B /* CategoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +121,8 @@
 			isa = PBXGroup;
 			children = (
 				1A0000000000000000000006 /* ActivitySession.swift */,
+				1A0000000000000000000018 /* Category.swift */,
+				1A0000000000000000000019 /* CategoryRule.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -123,6 +133,7 @@
 				1A0000000000000000000007 /* DatabaseManager.swift */,
 				1A0000000000000000000008 /* ActivitySessionStore.swift */,
 				1A0000000000000000000009 /* NeverTrackStore.swift */,
+				1A000000000000000000001B /* CategoryStore.swift */,
 				3A0000000000000000000006 /* Migrations */,
 			);
 			path = Storage;
@@ -132,6 +143,7 @@
 			isa = PBXGroup;
 			children = (
 				1A000000000000000000000A /* Migration001_Sessions.swift */,
+				1A000000000000000000001A /* Migration002_Categories.swift */,
 			);
 			path = Migrations;
 			sourceTree = "<group>";
@@ -313,6 +325,10 @@
 				2A000000000000000000000D /* TodayAggregate.swift in Sources */,
 				2A000000000000000000000E /* DateFormatters.swift in Sources */,
 				2A000000000000000000000F /* DurationFormatter.swift in Sources */,
+				2A0000000000000000000015 /* Category.swift in Sources */,
+				2A0000000000000000000016 /* CategoryRule.swift in Sources */,
+				2A0000000000000000000017 /* Migration002_Categories.swift in Sources */,
+				2A0000000000000000000018 /* CategoryStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

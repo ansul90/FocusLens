@@ -17,6 +17,7 @@ final class DatabaseManager: @unchecked Sendable {
             let pool = try DatabasePool(path: AppConstants.databaseURL.path, configuration: config)
             var migrator = DatabaseMigrator()
             migrator.registerMigration(Migration001_Sessions.identifier, migrate: Migration001_Sessions.migrate)
+            migrator.registerMigration(Migration002_Categories.identifier, migrate: Migration002_Categories.migrate)
             try migrator.migrate(pool)
             try pool.write { try $0.execute(sql: "PRAGMA journal_mode=WAL") }
             dbPool = pool

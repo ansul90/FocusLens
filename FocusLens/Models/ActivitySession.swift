@@ -10,6 +10,7 @@ struct ActivitySession: Codable, Identifiable, Hashable, Sendable {
     let endedAt: Date?
     let durationSeconds: Double?
     let isIdle: Bool
+    var categoryId: Int64?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -20,6 +21,7 @@ struct ActivitySession: Codable, Identifiable, Hashable, Sendable {
         case endedAt = "ended_at"
         case durationSeconds = "duration_seconds"
         case isIdle = "is_idle"
+        case categoryId = "category_id"
     }
 
     var isActive: Bool { endedAt == nil }
@@ -41,6 +43,7 @@ extension ActivitySession: FetchableRecord, MutablePersistableRecord {
         static let endedAt = Column(CodingKeys.endedAt)
         static let durationSeconds = Column(CodingKeys.durationSeconds)
         static let isIdle = Column(CodingKeys.isIdle)
+        static let categoryId = Column(CodingKeys.categoryId)
     }
 
     mutating func didInsert(_ inserted: InsertionSuccess) {
