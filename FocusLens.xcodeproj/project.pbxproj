@@ -37,6 +37,7 @@
 		2A000000000000000000001C /* DashboardCharts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000001F /* DashboardCharts.swift */; };
 		2A000000000000000000001D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000020 /* SettingsView.swift */; };
 		2A000000000000000000001E /* CategorySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000021 /* CategorySettingsView.swift */; };
+		2A000000000000000000001F /* Migration003_SeedRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000022 /* Migration003_SeedRules.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -73,6 +74,7 @@
 		1A000000000000000000001F /* DashboardCharts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardCharts.swift; sourceTree = "<group>"; };
 		1A0000000000000000000020 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		1A0000000000000000000021 /* CategorySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategorySettingsView.swift; sourceTree = "<group>"; };
+		1A0000000000000000000022 /* Migration003_SeedRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration003_SeedRules.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -156,6 +158,7 @@
 			children = (
 				1A000000000000000000000A /* Migration001_Sessions.swift */,
 				1A000000000000000000001A /* Migration002_Categories.swift */,
+				1A0000000000000000000022 /* Migration003_SeedRules.swift */,
 			);
 			path = Migrations;
 			sourceTree = "<group>";
@@ -346,6 +349,7 @@
 				2A0000000000000000000015 /* Category.swift in Sources */,
 				2A0000000000000000000016 /* CategoryRule.swift in Sources */,
 				2A0000000000000000000017 /* Migration002_Categories.swift in Sources */,
+				2A000000000000000000001F /* Migration003_SeedRules.swift in Sources */,
 				2A0000000000000000000018 /* CategoryStore.swift in Sources */,
 				2A0000000000000000000019 /* CategorizationEngine.swift in Sources */,
 				2A000000000000000000001B /* DashboardView.swift in Sources */,

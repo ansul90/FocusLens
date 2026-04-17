@@ -18,6 +18,7 @@ final class DatabaseManager: @unchecked Sendable {
             var migrator = DatabaseMigrator()
             migrator.registerMigration(Migration001_Sessions.identifier, migrate: Migration001_Sessions.migrate)
             migrator.registerMigration(Migration002_Categories.identifier, migrate: Migration002_Categories.migrate)
+            migrator.registerMigration(Migration003_SeedRules.identifier, migrate: Migration003_SeedRules.migrate)
             try migrator.migrate(pool)
             try pool.write { try $0.execute(sql: "PRAGMA journal_mode=WAL") }
             dbPool = pool
