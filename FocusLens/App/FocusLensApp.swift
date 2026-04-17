@@ -30,7 +30,7 @@ struct FocusLensApp: App {
         Window("Dashboard", id: "dashboard") {
             DashboardView()
         }
-        .defaultSize(width: 680, height: 520)
+        .defaultSize(width: 680, height: 500)
         .environment(aggregate)
 
         Window("Settings", id: "settings") {

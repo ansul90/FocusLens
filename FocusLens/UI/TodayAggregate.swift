@@ -9,7 +9,6 @@ final class TodayAggregate {
     private(set) var totalActiveSeconds: Double = 0
     private(set) var categoryBreakdown: [(category: Category, totalSeconds: Double)] = []
     private(set) var productivityScore: Int = 50
-    private(set) var hourlyBreakdown: [(hour: Int, seconds: Double)] = []
     private(set) var productivityTierBreakdown: [(tier: Int, seconds: Double)] = []
     private(set) var hourlyTierBreakdown: [(hour: Int, tier: Int, seconds: Double)] = []
     var currentAppName: String = ""
@@ -27,7 +26,6 @@ final class TodayAggregate {
     func refreshStats() {
         topApps = (try? store.fetchTodayTopApps(limit: 10)) ?? []
         totalActiveSeconds = (try? store.fetchTodayActiveSeconds()) ?? 0
-        hourlyBreakdown = (try? store.fetchTodayHourlyBreakdown()) ?? []
         do {
             hourlyTierBreakdown = try store.fetchTodayHourlyTierBreakdown()
         } catch {
