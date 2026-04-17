@@ -1,0 +1,508 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2A0000000000000000000001 /* FocusLensApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000003 /* FocusLensApp.swift */; };
+		2A0000000000000000000002 /* LoginItemManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000004 /* LoginItemManager.swift */; };
+		2A0000000000000000000003 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000005 /* AppConstants.swift */; };
+		2A0000000000000000000004 /* ActivitySession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000006 /* ActivitySession.swift */; };
+		2A0000000000000000000005 /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000007 /* DatabaseManager.swift */; };
+		2A0000000000000000000006 /* ActivitySessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000008 /* ActivitySessionStore.swift */; };
+		2A0000000000000000000007 /* NeverTrackStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000009 /* NeverTrackStore.swift */; };
+		2A0000000000000000000008 /* Migration001_Sessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000000A /* Migration001_Sessions.swift */; };
+		2A0000000000000000000009 /* ActivityTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000000B /* ActivityTracker.swift */; };
+		2A000000000000000000000A /* IdleDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000000C /* IdleDetector.swift */; };
+		2A000000000000000000000B /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000000D /* PermissionManager.swift */; };
+		2A000000000000000000000C /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000000E /* MenuBarView.swift */; };
+		2A000000000000000000000D /* TodayAggregate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000000F /* TodayAggregate.swift */; };
+		2A000000000000000000000E /* DateFormatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000010 /* DateFormatters.swift */; };
+		2A000000000000000000000F /* DurationFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000011 /* DurationFormatter.swift */; };
+		2A0000000000000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000015 /* Assets.xcassets */; };
+		2A0000000000000000000011 /* ActivityTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000012 /* ActivityTrackerTests.swift */; };
+		2A0000000000000000000012 /* IdleDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000013 /* IdleDetectorTests.swift */; };
+		2A0000000000000000000013 /* DurationFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000014 /* DurationFormatterTests.swift */; };
+		2A0000000000000000000014 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = BA0000000000000000000001 /* GRDB */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1A0000000000000000000001 /* FocusLens.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FocusLens.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A0000000000000000000002 /* FocusLensTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusLensTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A0000000000000000000003 /* FocusLensApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusLensApp.swift; sourceTree = "<group>"; };
+		1A0000000000000000000004 /* LoginItemManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemManager.swift; sourceTree = "<group>"; };
+		1A0000000000000000000005 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
+		1A0000000000000000000006 /* ActivitySession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivitySession.swift; sourceTree = "<group>"; };
+		1A0000000000000000000007 /* DatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseManager.swift; sourceTree = "<group>"; };
+		1A0000000000000000000008 /* ActivitySessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivitySessionStore.swift; sourceTree = "<group>"; };
+		1A0000000000000000000009 /* NeverTrackStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeverTrackStore.swift; sourceTree = "<group>"; };
+		1A000000000000000000000A /* Migration001_Sessions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration001_Sessions.swift; sourceTree = "<group>"; };
+		1A000000000000000000000B /* ActivityTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTracker.swift; sourceTree = "<group>"; };
+		1A000000000000000000000C /* IdleDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleDetector.swift; sourceTree = "<group>"; };
+		1A000000000000000000000D /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
+		1A000000000000000000000E /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		1A000000000000000000000F /* TodayAggregate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayAggregate.swift; sourceTree = "<group>"; };
+		1A0000000000000000000010 /* DateFormatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateFormatters.swift; sourceTree = "<group>"; };
+		1A0000000000000000000011 /* DurationFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DurationFormatter.swift; sourceTree = "<group>"; };
+		1A0000000000000000000012 /* ActivityTrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTrackerTests.swift; sourceTree = "<group>"; };
+		1A0000000000000000000013 /* IdleDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleDetectorTests.swift; sourceTree = "<group>"; };
+		1A0000000000000000000014 /* DurationFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DurationFormatterTests.swift; sourceTree = "<group>"; };
+		1A0000000000000000000015 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1A0000000000000000000016 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1A0000000000000000000017 /* FocusLens.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FocusLens.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8A0000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A0000000000000000000014 /* GRDB in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8A0000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3A0000000000000000000001 /* Root */ = {
+			isa = PBXGroup;
+			children = (
+				3A0000000000000000000002 /* FocusLens */,
+				3A000000000000000000000A /* FocusLensTests */,
+				3A000000000000000000000B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3A0000000000000000000002 /* FocusLens */ = {
+			isa = PBXGroup;
+			children = (
+				3A0000000000000000000003 /* App */,
+				3A0000000000000000000004 /* Models */,
+				3A0000000000000000000005 /* Storage */,
+				3A0000000000000000000007 /* Tracking */,
+				3A0000000000000000000008 /* UI */,
+				3A0000000000000000000009 /* Utilities */,
+				1A0000000000000000000015 /* Assets.xcassets */,
+				1A0000000000000000000016 /* Info.plist */,
+				1A0000000000000000000017 /* FocusLens.entitlements */,
+			);
+			path = FocusLens;
+			sourceTree = "<group>";
+		};
+		3A0000000000000000000003 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				1A0000000000000000000003 /* FocusLensApp.swift */,
+				1A0000000000000000000004 /* LoginItemManager.swift */,
+				1A0000000000000000000005 /* AppConstants.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		3A0000000000000000000004 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				1A0000000000000000000006 /* ActivitySession.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		3A0000000000000000000005 /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				1A0000000000000000000007 /* DatabaseManager.swift */,
+				1A0000000000000000000008 /* ActivitySessionStore.swift */,
+				1A0000000000000000000009 /* NeverTrackStore.swift */,
+				3A0000000000000000000006 /* Migrations */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+		3A0000000000000000000006 /* Migrations */ = {
+			isa = PBXGroup;
+			children = (
+				1A000000000000000000000A /* Migration001_Sessions.swift */,
+			);
+			path = Migrations;
+			sourceTree = "<group>";
+		};
+		3A0000000000000000000007 /* Tracking */ = {
+			isa = PBXGroup;
+			children = (
+				1A000000000000000000000B /* ActivityTracker.swift */,
+				1A000000000000000000000C /* IdleDetector.swift */,
+				1A000000000000000000000D /* PermissionManager.swift */,
+			);
+			path = Tracking;
+			sourceTree = "<group>";
+		};
+		3A0000000000000000000008 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				1A000000000000000000000E /* MenuBarView.swift */,
+				1A000000000000000000000F /* TodayAggregate.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		3A0000000000000000000009 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				1A0000000000000000000010 /* DateFormatters.swift */,
+				1A0000000000000000000011 /* DurationFormatter.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		3A000000000000000000000A /* FocusLensTests */ = {
+			isa = PBXGroup;
+			children = (
+				1A0000000000000000000012 /* ActivityTrackerTests.swift */,
+				1A0000000000000000000013 /* IdleDetectorTests.swift */,
+				1A0000000000000000000014 /* DurationFormatterTests.swift */,
+			);
+			path = FocusLensTests;
+			sourceTree = "<group>";
+		};
+		3A000000000000000000000B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1A0000000000000000000001 /* FocusLens.app */,
+				1A0000000000000000000002 /* FocusLensTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4A0000000000000000000001 /* FocusLens */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6A0000000000000000000002 /* Build configuration list for PBXNativeTarget "FocusLens" */;
+			buildPhases = (
+				7A0000000000000000000001 /* Sources */,
+				8A0000000000000000000001 /* Frameworks */,
+				9A0000000000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FocusLens;
+			packageProductDependencies = (
+				BA0000000000000000000001 /* GRDB */,
+			);
+			productName = FocusLens;
+			productReference = 1A0000000000000000000001 /* FocusLens.app */;
+			productType = "com.apple.product-type.application";
+		};
+		4A0000000000000000000002 /* FocusLensTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6A0000000000000000000003 /* Build configuration list for PBXNativeTarget "FocusLensTests" */;
+			buildPhases = (
+				7A0000000000000000000002 /* Sources */,
+				8A0000000000000000000002 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FocusLensTests;
+			productName = FocusLensTests;
+			productReference = 1A0000000000000000000002 /* FocusLensTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CA0000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					4A0000000000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					4A0000000000000000000002 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = 4A0000000000000000000001;
+					};
+				};
+			};
+			buildConfigurationList = 6A0000000000000000000001 /* Build configuration list for PBXProject "FocusLens" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 3A0000000000000000000001;
+			packageReferences = (
+				AA0000000000000000000001 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
+			);
+			productRefGroup = 3A000000000000000000000B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				4A0000000000000000000001 /* FocusLens */,
+				4A0000000000000000000002 /* FocusLensTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9A0000000000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A0000000000000000000010 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7A0000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A0000000000000000000001 /* FocusLensApp.swift in Sources */,
+				2A0000000000000000000002 /* LoginItemManager.swift in Sources */,
+				2A0000000000000000000003 /* AppConstants.swift in Sources */,
+				2A0000000000000000000004 /* ActivitySession.swift in Sources */,
+				2A0000000000000000000005 /* DatabaseManager.swift in Sources */,
+				2A0000000000000000000006 /* ActivitySessionStore.swift in Sources */,
+				2A0000000000000000000007 /* NeverTrackStore.swift in Sources */,
+				2A0000000000000000000008 /* Migration001_Sessions.swift in Sources */,
+				2A0000000000000000000009 /* ActivityTracker.swift in Sources */,
+				2A000000000000000000000A /* IdleDetector.swift in Sources */,
+				2A000000000000000000000B /* PermissionManager.swift in Sources */,
+				2A000000000000000000000C /* MenuBarView.swift in Sources */,
+				2A000000000000000000000D /* TodayAggregate.swift in Sources */,
+				2A000000000000000000000E /* DateFormatters.swift in Sources */,
+				2A000000000000000000000F /* DurationFormatter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7A0000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A0000000000000000000011 /* ActivityTrackerTests.swift in Sources */,
+				2A0000000000000000000012 /* IdleDetectorTests.swift in Sources */,
+				2A0000000000000000000013 /* DurationFormatterTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		5A0000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		5A0000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		5A0000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "FocusLens/FocusLens.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "FocusLens/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.focuslens.app";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		5A0000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "FocusLens/FocusLens.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "FocusLens/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.focuslens.app";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		5A0000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.focuslens.app.tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FocusLens.app/Contents/MacOS/FocusLens";
+			};
+			name = Debug;
+		};
+		5A0000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.focuslens.app.tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FocusLens.app/Contents/MacOS/FocusLens";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6A0000000000000000000001 /* Build configuration list for PBXProject "FocusLens" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5A0000000000000000000001 /* Debug */,
+				5A0000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6A0000000000000000000002 /* Build configuration list for PBXNativeTarget "FocusLens" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5A0000000000000000000003 /* Debug */,
+				5A0000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6A0000000000000000000003 /* Build configuration list for PBXNativeTarget "FocusLensTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5A0000000000000000000005 /* Debug */,
+				5A0000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AA0000000000000000000001 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/groue/GRDB.swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BA0000000000000000000001 /* GRDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA0000000000000000000001 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			productName = GRDB;
+		};
+/* End XCSwiftPackageProductDependency section */
+
+	};
+	rootObject = CA0000000000000000000001 /* Project object */;
+}
