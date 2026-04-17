@@ -9,7 +9,7 @@ struct GeminiSettings {
 
     var apiKey: String {
         get { defaults.string(forKey: AppConstants.AI.userDefaultsKeyAPIKey) ?? "" }
-        set { defaults.set(newValue, forKey: AppConstants.AI.userDefaultsKeyAPIKey) }
+        set { defaults.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forKey: AppConstants.AI.userDefaultsKeyAPIKey) }
     }
 
     var isEnabled: Bool {
@@ -18,6 +18,6 @@ struct GeminiSettings {
     }
 
     var hasValidKey: Bool {
-        isEnabled && !apiKey.trimmingCharacters(in: .whitespaces).isEmpty
+        isEnabled && !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
