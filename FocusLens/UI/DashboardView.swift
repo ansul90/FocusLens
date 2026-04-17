@@ -3,10 +3,16 @@ import SwiftUI
 struct DashboardView: View {
     @Environment(TodayAggregate.self) private var aggregate
 
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "EEEE, MMMM d"
+        return f
+    }()
+
+    private static let minimumBarSeconds: Double = 1.0
+
     private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMMM d"
-        return formatter.string(from: Date())
+        Self.dateFormatter.string(from: Date())
     }
 
     var body: some View {
@@ -107,7 +113,7 @@ struct DashboardView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             } else {
-                let maxCatSeconds = aggregate.categoryBreakdown.first?.totalSeconds ?? 1
+                let maxCatSeconds = aggregate.categoryBreakdown.first?.totalSeconds ?? Self.minimumBarSeconds
                 ForEach(aggregate.categoryBreakdown.prefix(6), id: \.category.name) { entry in
                     CategoryBarRow(
                         name: entry.category.name,

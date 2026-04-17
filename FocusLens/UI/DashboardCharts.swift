@@ -195,7 +195,6 @@ struct HourlyTierChart: View {
                     AxisGridLine()
                 }
             }
-            .frame(height: 100)
         }
     }
 }
