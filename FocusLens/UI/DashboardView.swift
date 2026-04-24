@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @Environment(TodayAggregate.self) private var aggregate
+    @Environment(AskViewModel.self) private var askViewModel
 
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -10,6 +11,20 @@ struct DashboardView: View {
     }()
 
     private static let minimumBarSeconds: Double = 1.0
+
+    @State private var selectedTab: DashboardTab = .stats
+
+    private enum DashboardTab: String, CaseIterable {
+        case stats = "Stats"
+        case ask = "Ask FocusLens"
+
+        var icon: String {
+            switch self {
+            case .stats: return "chart.bar.fill"
+            case .ask: return "bubble.left.and.bubble.right.fill"
+            }
+        }
+    }
 
     private var isToday: Bool {
         Calendar.current.isDateInToday(aggregate.selectedDate)
@@ -20,6 +35,51 @@ struct DashboardView: View {
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            tabBar
+            Divider()
+
+            switch selectedTab {
+            case .stats:
+                statsContent
+            case .ask:
+                AskFocusLensView(viewModel: askViewModel)
+            }
+        }
+        .frame(width: 680, height: 540)
+    }
+
+    // MARK: - Tab bar
+
+    private var tabBar: some View {
+        HStack(spacing: 0) {
+            ForEach(DashboardTab.allCases, id: \.self) { tab in
+                Button {
+                    selectedTab = tab
+                } label: {
+                    Label(tab.rawValue, systemImage: tab.icon)
+                        .font(.callout)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(
+                            selectedTab == tab
+                                ? Color.accentColor.opacity(0.12)
+                                : Color.clear,
+                            in: RoundedRectangle(cornerRadius: 6)
+                        )
+                        .foregroundStyle(selectedTab == tab ? Color.accentColor : Color.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
+    }
+
+    // MARK: - Stats content (original dashboard)
+
+    private var statsContent: some View {
         VStack(alignment: .leading, spacing: 0) {
             dateHeader
             topSection
@@ -29,7 +89,6 @@ struct DashboardView: View {
             bottomSection
         }
         .padding(20)
-        .frame(width: 680, height: 500)
     }
 
     // MARK: - Date Header

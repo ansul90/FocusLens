@@ -167,13 +167,12 @@ struct HourlyTierChart: View {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            Chart(hourlyTierBreakdown.indices, id: \.self) { index in
-                let entry = hourlyTierBreakdown[index]
+            Chart(Array(hourlyTierBreakdown.enumerated()), id: \.offset) { item in
                 BarMark(
-                    x: .value("Hour", entry.hour),
-                    y: .value("Minutes", entry.seconds / 60)
+                    x: .value("Hour", item.element.hour),
+                    y: .value("Minutes", item.element.seconds / 60)
                 )
-                .foregroundStyle(TierColors.color(for: entry.tier))
+                .foregroundStyle(TierColors.color(for: item.element.tier))
             }
             .chartXAxis {
                 AxisMarks(values: Self.xAxisStride) { value in

@@ -52,6 +52,8 @@ final class TodayAggregate {
             )
         }.value
 
+        guard date == selectedDate else { return }
+
         topApps = fetched.topApps
         totalActiveSeconds = fetched.totalActiveSeconds
         hourlyTierBreakdown = fetched.hourlyTierBreakdown

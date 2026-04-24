@@ -10,45 +10,90 @@ private enum ReclassifyStatus {
     case idle, running, done(Int), failure(String)
 }
 
+private enum OllamaTestStatus {
+    case idle, testing, success(String), failure(String)
+}
+
 // MARK: - View
 
 struct AISettingsView: View {
-    @State private var settings = GeminiSettings()
+    @State private var geminiSettings = GeminiSettings()
+    @State private var ollamaSettings = OllamaSettings()
     @State private var connectionStatus: ConnectionStatus = .idle
     @State private var reclassifyStatus: ReclassifyStatus = .idle
+    @State private var ollamaTestStatus: OllamaTestStatus = .idle
 
     private let classifier = BrowserClassifier()
 
     var body: some View {
         Form {
-            Section("Gemini AI") {
-                Toggle("Enable AI browser classification", isOn: $settings.isEnabled)
-            }
+            ollamaSection
+            geminiSection
+        }
+        .formStyle(.grouped)
+        .padding()
+    }
 
-            if settings.isEnabled {
+    // MARK: - Ollama section
+
+    private var ollamaSection: some View {
+        Section {
+            Toggle("Enable local agent (Ollama)", isOn: $ollamaSettings.isEnabled)
+
+            if ollamaSettings.isEnabled {
+                LabeledContent("Model") {
+                    TextField("e.g. gemma4", text: $ollamaSettings.modelName)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 160)
+                }
+
+                LabeledContent("Host") {
+                    TextField("http://localhost:11434", text: $ollamaSettings.host)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 220)
+                }
+
+                HStack {
+                    Button("Test Ollama") { runOllamaTest() }
+                        .disabled(isOllamaTestInFlight)
+
+                    ollamaTestIndicator
+                }
+
+                Text("Install [Ollama](https://ollama.com), then run: `ollama pull \(ollamaSettings.modelName.isEmpty ? "gemma4" : ollamaSettings.modelName)`")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .tint(.accentColor)
+            }
+        } header: {
+            Label("Local AI (Ollama)", systemImage: "cpu")
+        }
+    }
+
+    // MARK: - Gemini section
+
+    private var geminiSection: some View {
+        Section {
+            Toggle("Enable Gemini browser classification", isOn: $geminiSettings.isEnabled)
+
+            if geminiSettings.isEnabled {
                 Section("API Key") {
-                    SecureField("Gemini API key", text: $settings.apiKey)
+                    SecureField("Gemini API key", text: $geminiSettings.apiKey)
                         .textFieldStyle(.roundedBorder)
                 }
 
                 Section("Connection") {
                     HStack {
-                        Button("Test Connection") {
-                            runConnectionTest()
-                        }
-                        .disabled(!settings.hasValidKey || isTestInFlight)
-
+                        Button("Test Connection") { runConnectionTest() }
+                            .disabled(!geminiSettings.hasValidKey || isTestInFlight)
                         connectionIndicator
                     }
                 }
 
                 Section("Classification") {
                     HStack {
-                        Button("Reclassify Now") {
-                            runReclassify()
-                        }
-                        .disabled(!settings.hasValidKey || isReclassifyInFlight)
-
+                        Button("Reclassify Now") { runReclassify() }
+                            .disabled(!geminiSettings.hasValidKey || isReclassifyInFlight)
                         reclassifyIndicator
                     }
                     Text("Re-runs Gemini on all browser sessions still categorised as \"Browser\".")
@@ -56,9 +101,9 @@ struct AISettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        } header: {
+            Label("Cloud AI (Gemini)", systemImage: "cloud")
         }
-        .formStyle(.grouped)
-        .padding()
     }
 
     // MARK: - Computed helpers
@@ -73,29 +118,28 @@ struct AISettingsView: View {
         return false
     }
 
+    private var isOllamaTestInFlight: Bool {
+        if case .testing = ollamaTestStatus { return true }
+        return false
+    }
+
     @ViewBuilder
     private var connectionIndicator: some View {
         switch connectionStatus {
-        case .idle:
-            EmptyView()
-        case .testing:
-            ProgressView().controlSize(.small)
+        case .idle: EmptyView()
+        case .testing: ProgressView().controlSize(.small)
         case .success:
-            Label("Connection successful", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green)
+            Label("Connection successful", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
         case .failure(let message):
-            Label(message, systemImage: "xmark.circle.fill")
-                .foregroundStyle(.red)
+            Label(message, systemImage: "xmark.circle.fill").foregroundStyle(.red)
         }
     }
 
     @ViewBuilder
     private var reclassifyIndicator: some View {
         switch reclassifyStatus {
-        case .idle:
-            EmptyView()
-        case .running:
-            ProgressView().controlSize(.small)
+        case .idle: EmptyView()
+        case .running: ProgressView().controlSize(.small)
         case .done(let count):
             Label(
                 count == 0 ? "Nothing to reclassify" : "Reclassified \(count) session\(count == 1 ? "" : "s")",
@@ -103,16 +147,49 @@ struct AISettingsView: View {
             )
             .foregroundStyle(count == 0 ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.green))
         case .failure(let message):
-            Label(message, systemImage: "xmark.circle.fill")
-                .foregroundStyle(.red)
+            Label(message, systemImage: "xmark.circle.fill").foregroundStyle(.red)
+        }
+    }
+
+    @ViewBuilder
+    private var ollamaTestIndicator: some View {
+        switch ollamaTestStatus {
+        case .idle: EmptyView()
+        case .testing: ProgressView().controlSize(.small)
+        case .success(let info):
+            Label(info, systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+        case .failure(let msg):
+            Label(msg, systemImage: "xmark.circle.fill").foregroundStyle(.red)
         }
     }
 
     // MARK: - Actions
 
+    private func runOllamaTest() {
+        ollamaTestStatus = .testing
+        let snapshot = ollamaSettings
+        Task { @MainActor in
+            let client = OllamaClient(settings: snapshot)
+            do {
+                let models = try await client.availableModels()
+                let model = snapshot.modelName
+                if models.contains(where: { $0.lowercased().hasPrefix(model.split(separator: ":").first.map(String.init)?.lowercased() ?? model) }) {
+                    ollamaTestStatus = .success("Connected · \(model) available")
+                } else {
+                    let list = models.prefix(3).joined(separator: ", ")
+                    ollamaTestStatus = .failure("Model '\(model)' not found. Installed: \(list.isEmpty ? "(none)" : list)")
+                }
+            } catch OllamaError.unreachable {
+                ollamaTestStatus = .failure("Ollama not reachable. Run: ollama serve")
+            } catch {
+                ollamaTestStatus = .failure(error.localizedDescription)
+            }
+        }
+    }
+
     private func runConnectionTest() {
         connectionStatus = .testing
-        let snapshot = settings
+        let snapshot = geminiSettings
         Task { @MainActor in
             do {
                 let client = GeminiClient(settings: snapshot)

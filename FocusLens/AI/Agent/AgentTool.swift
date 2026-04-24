@@ -1,0 +1,70 @@
+import Foundation
+
+// MARK: - Protocol
+
+/// A single tool the agent can invoke. All tools are read-only.
+protocol AgentTool: Sendable {
+    /// The name the LLM uses to invoke this tool (snake_case, no spaces).
+    var name: String { get }
+
+    /// One-sentence description shown to the LLM in the system prompt.
+    var description: String { get }
+
+    /// Human-readable argument schema shown to the LLM in the system prompt.
+    /// Format: comma-separated `argName: type` pairs with a description.
+    var argsDescription: String { get }
+
+    /// Execute the tool with the provided args dict.
+    /// Always returns a JSON string — on failure returns {"error": "..."}.
+    func run(args: [String: Any]) async -> String
+}
+
+// MARK: - Registry
+
+/// Thread-safe registry of all available agent tools.
+actor ToolRegistry {
+    private var tools: [String: any AgentTool] = [:]
+
+    func register(_ tool: any AgentTool) {
+        tools[tool.name] = tool
+    }
+
+    func get(_ name: String) -> (any AgentTool)? {
+        tools[name]
+    }
+
+    func all() -> [any AgentTool] {
+        tools.values.sorted { $0.name < $1.name }
+    }
+
+    /// Generates the tools section of the system prompt.
+    func systemPromptSection() -> String {
+        let sorted = tools.values.sorted { $0.name < $1.name }
+        let descriptions = sorted.enumerated().map { idx, tool in
+            """
+            \(idx + 1). \(tool.name)
+               Args: \(tool.argsDescription)
+               \(tool.description)
+            """
+        }
+        return descriptions.joined(separator: "\n\n")
+    }
+}
+
+// MARK: - Helpers
+
+/// Encode any value as a compact JSON string for returning from tools.
+func toolJSON(_ value: some Encodable) -> String {
+    guard let data = try? JSONEncoder().encode(value),
+          let str = String(data: data, encoding: .utf8) else {
+        return #"{"error":"encoding failed"}"#
+    }
+    let truncated = str.count > AppConstants.Agent.toolResultMaxChars
+        ? String(str.prefix(AppConstants.Agent.toolResultMaxChars)) + "...}"
+        : str
+    return truncated
+}
+
+func toolError(_ message: String) -> String {
+    #"{"error":"\#(message.replacingOccurrences(of: "\"", with: "'"))"}"#
+}

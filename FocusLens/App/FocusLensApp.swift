@@ -7,6 +7,14 @@ struct FocusLensApp: App {
     private let categorizationEngine = CategorizationEngine()
     private let browserClassifier = BrowserClassifier()
 
+    @State private var askViewModel: AskViewModel = {
+        let registry = ToolRegistry()
+        let client = OllamaClient()
+        Task { await registry.registerDefaultTools() }
+        let runner = AgentRunner(llm: client, registry: registry)
+        return AskViewModel(runner: runner, ollamaClient: client)
+    }()
+
     var body: some Scene {
         MenuBarExtra("FocusLens", systemImage: "eye") {
             MenuBarView(aggregate: aggregate, tracker: tracker)
@@ -15,10 +23,6 @@ struct FocusLensApp: App {
                         onSessionEnded: { [aggregate, categorizationEngine] in
                             Task.detached {
                                 try? categorizationEngine.batchCategorize()
-                                // Gemini classification on session-end disabled; runs at app launch only
-//                                if GeminiSettings().hasValidKey {
-//                                    try? await browserClassifier.classifyPending()
-//                                }
                                 await aggregate.refreshStats()
                             }
                         },
@@ -33,10 +37,6 @@ struct FocusLensApp: App {
                     await tracker.start()
                     Task.detached { [aggregate, categorizationEngine] in
                         try? categorizationEngine.batchCategorize()
-                        // Gemini classification on app-launch disabled; runs only on manual Reclassify Now
-//                        if GeminiSettings().hasValidKey {
-//                            try? await browserClassifier.classifyPending()
-//                        }
                         await aggregate.refreshStats()
                     }
                 }
@@ -46,8 +46,9 @@ struct FocusLensApp: App {
         Window("Dashboard", id: "dashboard") {
             DashboardView()
         }
-        .defaultSize(width: 680, height: 500)
+        .defaultSize(width: 680, height: 540)
         .environment(aggregate)
+        .environment(askViewModel)
 
         Window("Settings", id: "settings") {
             SettingsView()

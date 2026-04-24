@@ -2,7 +2,7 @@ import Foundation
 
 enum AppConstants {
     static let idleThresholdSeconds: TimeInterval = 300
-    static let minimumSessionSeconds: TimeInterval = 2
+    static let minimumSessionSeconds: TimeInterval = 60
     static let idlePollIntervalSeconds: TimeInterval = 30
     static let menuRefreshIntervalSeconds: TimeInterval = 1
     static let bundleIdentifier: String = "com.focuslens.app"
@@ -25,5 +25,20 @@ enum AppConstants {
         static let requestTimeoutSeconds: TimeInterval = 15
         static let userDefaultsKeyAPIKey: String = "ai.gemini.apiKey"
         static let userDefaultsKeyEnabled: String = "ai.gemini.enabled"
+    }
+
+    enum Ollama {
+        static let defaultHost: String = "http://localhost:11434"
+        static let defaultModel: String = "gemma4:26b-a4b-it-q4_K_M"
+        static let requestTimeoutSeconds: TimeInterval = 60
+        static let healthCheckTimeoutSeconds: TimeInterval = 2
+        static let userDefaultsKeyEnabled: String = "ai.ollama.enabled"
+        static let userDefaultsKeyHost: String = "ai.ollama.host"
+        static let userDefaultsKeyModel: String = "ai.ollama.model"
+    }
+
+    enum Agent {
+        static let maxIterations: Int = 15
+        static let toolResultMaxChars: Int = 4000
     }
 }

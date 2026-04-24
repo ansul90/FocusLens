@@ -38,8 +38,7 @@ struct MenuBarView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
             } else {
-                ForEach(aggregate.topApps.prefix(5).indices, id: \.self) { i in
-                    let app = aggregate.topApps[i]
+                ForEach(Array(aggregate.topApps.prefix(5)), id: \.appName) { app in
                     HStack {
                         Text(app.appName)
                             .lineLimit(1)
