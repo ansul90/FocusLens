@@ -5,9 +5,11 @@ enum Migration004_FixAITools {
     static let identifier = "v4_fix_ai_tools"
 
     static func migrate(_ db: Database) throws {
-        // Migration003 inserted rules pointing to category_id = 10 (AI Tools)
-        // but the categories row was never committed, leaving a dangling FK reference.
-        // Re-insert the missing row with an explicit id so existing rules still resolve.
+        // Defensive repair for installations where the AI Tools category row (id=10)
+        // was absent from the categories table while category_rules still referenced it.
+        // This can happen if the user manually edited the database, or if a future schema
+        // change shifts autoincrement IDs. On a clean install (Migration003 runs in full)
+        // this guard exits immediately because the row already exists.
         let count = try Int.fetchOne(
             db, sql: "SELECT COUNT(*) FROM categories WHERE id = 10"
         ) ?? 0

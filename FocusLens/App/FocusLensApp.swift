@@ -53,5 +53,6 @@ struct FocusLensApp: App {
             SettingsView()
         }
         .defaultSize(width: 540, height: 420)
+        .environment(aggregate)
     }
 }

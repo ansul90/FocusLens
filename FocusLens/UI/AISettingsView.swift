@@ -7,7 +7,7 @@ private enum ConnectionStatus {
 }
 
 private enum ReclassifyStatus {
-    case idle, running, done(Int), failure(String)
+    case idle, running, done(found: Int, updated: Int), failure(String)
 }
 
 private enum OllamaTestStatus {
@@ -17,6 +17,7 @@ private enum OllamaTestStatus {
 // MARK: - View
 
 struct AISettingsView: View {
+    @Environment(TodayAggregate.self) private var aggregate
     @State private var geminiSettings = GeminiSettings()
     @State private var ollamaSettings = OllamaSettings()
     @State private var connectionStatus: ConnectionStatus = .idle
@@ -118,6 +119,12 @@ struct AISettingsView: View {
         return false
     }
 
+    private func reclassifyLabel(found: Int, updated: Int) -> String {
+        if updated > 0 { return "Reclassified \(updated) session\(updated == 1 ? "" : "s")" }
+        if found > 0 { return "Checked \(found) session\(found == 1 ? "" : "s") — all already categorised" }
+        return "Nothing to reclassify"
+    }
+
     private var isOllamaTestInFlight: Bool {
         if case .testing = ollamaTestStatus { return true }
         return false
@@ -140,12 +147,12 @@ struct AISettingsView: View {
         switch reclassifyStatus {
         case .idle: EmptyView()
         case .running: ProgressView().controlSize(.small)
-        case .done(let count):
+        case .done(let found, let updated):
             Label(
-                count == 0 ? "Nothing to reclassify" : "Reclassified \(count) session\(count == 1 ? "" : "s")",
-                systemImage: count == 0 ? "checkmark.circle" : "checkmark.circle.fill"
+                reclassifyLabel(found: found, updated: updated),
+                systemImage: updated > 0 ? "checkmark.circle.fill" : "checkmark.circle"
             )
-            .foregroundStyle(count == 0 ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.green))
+            .foregroundStyle(updated > 0 ? AnyShapeStyle(Color.green) : AnyShapeStyle(.secondary))
         case .failure(let message):
             Label(message, systemImage: "xmark.circle.fill").foregroundStyle(.red)
         }
@@ -205,8 +212,11 @@ struct AISettingsView: View {
         reclassifyStatus = .running
         Task { @MainActor in
             do {
-                let count = try await classifier.classifyPending()
-                reclassifyStatus = .done(count)
+                let result = try await classifier.classifyPending()
+                reclassifyStatus = .done(found: result.found, updated: result.updated)
+                if result.updated > 0 {
+                    await aggregate.refreshStats()
+                }
             } catch {
                 reclassifyStatus = .failure(humanReadable(error))
             }

@@ -10,6 +10,11 @@ protocol GeminiClassifying {
 
 extension GeminiClient: GeminiClassifying {}
 
+struct ClassificationResult: Sendable {
+    let found: Int    // sessions matching the DB query
+    let updated: Int  // sessions actually reclassified to a non-Browser category
+}
+
 // MARK: - BrowserClassifier
 
 struct BrowserClassifier {
@@ -33,14 +38,14 @@ struct BrowserClassifier {
     /// and updates their category_id in the database.
     /// Returns the number of sessions updated.
     @discardableResult
-    func classifyPending() async throws -> Int {
+    func classifyPending() async throws -> ClassificationResult {
         // 1. Load all categories; find "Browser" category ID
         let categories = try categoryStore.fetchAllCategories()
         guard let browserCategory = categories.first(where: {
             $0.name.caseInsensitiveCompare("Browser") == .orderedSame
         }), let browserCategoryId = browserCategory.id else {
             logger.info("No 'Browser' category found; skipping AI classification")
-            return 0
+            return ClassificationResult(found: 0, updated: 0)
         }
 
         // 2. Fetch browser sessions with category_id = Browser and non-nil window title
@@ -54,7 +59,7 @@ struct BrowserClassifier {
                 .fetchAll(db)
         }
 
-        guard !sessions.isEmpty else { return 0 }
+        guard !sessions.isEmpty else { return ClassificationResult(found: 0, updated: 0) }
 
         // 3. Build mapper
         let mapper = BrowserCategoryMapper(existing: categories)
@@ -108,7 +113,7 @@ struct BrowserClassifier {
             logger.info("BrowserClassifier: classified \(chunkUpdated) sessions in chunk")
         }
 
-        logger.info("BrowserClassifier: total \(totalUpdated) sessions updated")
-        return totalUpdated
+        logger.info("BrowserClassifier: \(sessions.count) found, \(totalUpdated) updated")
+        return ClassificationResult(found: sessions.count, updated: totalUpdated)
     }
 }

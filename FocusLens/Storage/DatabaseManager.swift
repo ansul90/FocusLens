@@ -1,10 +1,16 @@
 import Foundation
 import GRDB
+import os
 
+// @unchecked Sendable: DatabasePool is thread-safe by design (GRDB guarantee).
+// dbPool is written once in init and never mutated. checkpointTimer is only
+// accessed from the main run loop, so there are no concurrent mutations.
 final class DatabaseManager: @unchecked Sendable {
     static let shared = DatabaseManager()
 
     let dbPool: DatabasePool
+    private var checkpointTimer: Timer?
+    private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "DatabaseManager")
 
     private init() {
         do {
@@ -14,6 +20,9 @@ final class DatabaseManager: @unchecked Sendable {
             )
             var config = Configuration()
             config.busyMode = .timeout(5)
+            config.prepareDatabase { db in
+                try db.execute(sql: "PRAGMA foreign_keys = ON")
+            }
             let pool = try DatabasePool(path: AppConstants.databaseURL.path, configuration: config)
             var migrator = DatabaseMigrator()
             migrator.registerMigration(Migration001_Sessions.identifier, migrate: Migration001_Sessions.migrate)
@@ -25,6 +34,29 @@ final class DatabaseManager: @unchecked Sendable {
             dbPool = pool
         } catch {
             fatalError("Failed to open database: \(error)")
+        }
+        scheduleCheckpoint()
+    }
+
+    private func scheduleCheckpoint() {
+        let timer = Timer(
+            timeInterval: AppConstants.walCheckpointIntervalSeconds,
+            repeats: true
+        ) { [weak self] _ in
+            self?.checkpoint()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        checkpointTimer = timer
+    }
+
+    private func checkpoint() {
+        do {
+            try dbPool.writeWithoutTransaction { db in
+                try db.execute(sql: "PRAGMA wal_checkpoint(TRUNCATE)")
+            }
+            logger.debug("WAL checkpoint completed")
+        } catch {
+            logger.error("WAL checkpoint failed: \(error.localizedDescription)")
         }
     }
 }

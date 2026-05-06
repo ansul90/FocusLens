@@ -41,6 +41,28 @@ struct GeminiClassification: Decodable, Sendable {
 
 struct GeminiBatchResponse: Decodable, Sendable {
     let classifications: [GeminiClassification]
+
+    // Lenient decoding: a single unrecognised category from Gemini must not
+    // fail the entire batch. Items that don't pass GeminiClassification
+    // validation are silently dropped so the rest of the batch still applies.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let safe = try container.decode([SafeClassification].self, forKey: .classifications)
+        classifications = safe.compactMap(\.value)
+    }
+
+    init(classifications: [GeminiClassification]) {
+        self.classifications = classifications
+    }
+
+    enum CodingKeys: String, CodingKey { case classifications }
+}
+
+private struct SafeClassification: Decodable {
+    let value: GeminiClassification?
+    init(from decoder: Decoder) throws {
+        value = try? GeminiClassification(from: decoder)
+    }
 }
 
 // MARK: - Prompt builder

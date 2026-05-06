@@ -46,7 +46,8 @@ actor ActivityTracker {
         registerNotifications()
         setupIdleDetectorCallbacks()
         idleDetector.start()
-        await handleAppActivation(NSWorkspace.shared.frontmostApplication)
+        let frontApp = await MainActor.run { NSWorkspace.shared.frontmostApplication }
+        await handleAppActivation(frontApp)
     }
 
     func pause() async {
@@ -58,7 +59,8 @@ actor ActivityTracker {
     func resume() async {
         isPaused = false
         onStateChanged?(currentAppName, isPaused)
-        await handleAppActivation(NSWorkspace.shared.frontmostApplication)
+        let frontApp = await MainActor.run { NSWorkspace.shared.frontmostApplication }
+        await handleAppActivation(frontApp)
     }
 
     private func recoverOpenSessions() async {
@@ -67,7 +69,12 @@ actor ActivityTracker {
         for session in openSessions {
             guard let id = session.id else { continue }
             let closeAt = min(now, session.startedAt.addingTimeInterval(AppConstants.maxReasonableSessionSeconds))
-            try? store.close(id: id, at: closeAt)
+            let duration = closeAt.timeIntervalSince(session.startedAt)
+            if duration < AppConstants.minimumSessionSeconds {
+                try? store.delete(id: id)
+            } else {
+                try? store.close(id: id, at: closeAt)
+            }
         }
     }
 
@@ -105,22 +112,33 @@ actor ActivityTracker {
     private func setupIdleDetectorCallbacks() {
         idleDetector.onBecameIdle = { [weak self] in
             guard let self else { return }
+            let app = NSWorkspace.shared.frontmostApplication  // captured on @MainActor
             Task {
                 await self.closeCurrentSession()
-                if let app = NSWorkspace.shared.frontmostApplication {
-                    await self.openIdleSession(for: app)
-                }
+                if let app { await self.openIdleSession(for: app) }
             }
         }
         idleDetector.onBecameActive = { [weak self] in
             guard let self else { return }
+            let app = NSWorkspace.shared.frontmostApplication  // captured on @MainActor
             Task {
                 await self.closeCurrentSession()
-                if let app = NSWorkspace.shared.frontmostApplication {
-                    await self.handleAppActivation(app)
-                }
+                if let app { await self.handleAppActivation(app) }
             }
         }
+        idleDetector.onTick = { [weak self] in
+            guard let self else { return }
+            Task { await self.updateCurrentSessionTitle() }
+        }
+    }
+
+    private func updateCurrentSessionTitle() async {
+        guard let session = currentSession,
+              let id = session.id,
+              let app = currentApp,
+              !session.isIdle else { return }
+        guard let title = PermissionManager.windowTitle(for: app), !title.isEmpty else { return }
+        try? store.updateWindowTitle(id: id, windowTitle: title)
     }
 
     private func openSession(for app: NSRunningApplication) async {
@@ -174,11 +192,15 @@ actor ActivityTracker {
         currentApp = nil
         let now = Date()
         let duration = now.timeIntervalSince(session.startedAt)
-        if duration < AppConstants.minimumSessionSeconds {
+        let finalTitle = app.flatMap { PermissionManager.windowTitle(for: $0) }
+        let isNoisy = finalTitle.map { t in
+            let lower = t.lowercased()
+            return AppConstants.noisyWindowTitlePrefixes.contains { lower.hasPrefix($0) }
+        } ?? false
+        if duration < AppConstants.minimumSessionSeconds || isNoisy {
             try? store.delete(id: id)
         } else {
-            let title = app.flatMap { PermissionManager.windowTitle(for: $0) }
-            try? store.close(id: id, at: now, windowTitle: title)
+            try? store.close(id: id, at: now, windowTitle: finalTitle)
         }
         onSessionEnded?()
     }
@@ -196,6 +218,7 @@ actor ActivityTracker {
     }
 
     private func handleWake() async {
-        await handleAppActivation(NSWorkspace.shared.frontmostApplication)
+        let frontApp = await MainActor.run { NSWorkspace.shared.frontmostApplication }
+        await handleAppActivation(frontApp)
     }
 }

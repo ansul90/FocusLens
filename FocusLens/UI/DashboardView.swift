@@ -218,7 +218,7 @@ struct DashboardView: View {
                     .foregroundStyle(.secondary)
             } else {
                 let maxCatSeconds = aggregate.categoryBreakdown.first?.totalSeconds ?? Self.minimumBarSeconds
-                ForEach(aggregate.categoryBreakdown.prefix(6), id: \.category.name) { entry in
+                ForEach(aggregate.categoryBreakdown.prefix(8), id: \.category.name) { entry in
                     CategoryBarRow(
                         name: entry.category.name,
                         colorHex: entry.category.colorHex,

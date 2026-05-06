@@ -8,6 +8,15 @@ enum AppConstants {
     static let bundleIdentifier: String = "com.focuslens.app"
     static let databaseName: String = "focuslens.db"
     static let maxReasonableSessionSeconds: TimeInterval = 14400
+    static let walCheckpointIntervalSeconds: TimeInterval = 1800 // 30 minutes
+
+    // Window titles that carry no useful signal — sessions ending with these are discarded.
+    // Matched case-insensitively as a prefix so "New tab - Google Chrome" is caught by "new tab".
+    static let noisyWindowTitlePrefixes: [String] = [
+        "new tab",    // Chrome, Firefox
+        "new window", // Chrome, Firefox
+        "start page", // Safari
+    ]
 
     static let appSupportDirectory: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]

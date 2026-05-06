@@ -5,7 +5,7 @@ enum CategoryStoreError: Error {
     case missingPrimaryKey
 }
 
-struct CategoryStore {
+struct CategoryStore: Sendable {
     private let dbPool: DatabasePool
 
     init(dbPool: DatabasePool = DatabaseManager.shared.dbPool) {

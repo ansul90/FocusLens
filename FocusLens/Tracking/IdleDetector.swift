@@ -1,17 +1,20 @@
 import Cocoa
 import CoreGraphics
 
+@MainActor
 final class IdleDetector {
     var onBecameIdle: (() -> Void)?
     var onBecameActive: (() -> Void)?
+    var onTick: (() -> Void)?
     private(set) var isCurrentlyIdle = false
     private var timer: Timer?
 
     func start() {
-        timer = Timer.scheduledTimer(
-            withTimeInterval: AppConstants.idlePollIntervalSeconds,
-            repeats: true
-        ) { [weak self] _ in self?.tick() }
+        let t = Timer(timeInterval: AppConstants.idlePollIntervalSeconds, repeats: true) { [weak self] _ in
+            self?.tick()
+        }
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
     }
 
     func stop() {
@@ -24,8 +27,9 @@ final class IdleDetector {
         // CGEventType's failable initializer can return nil for out-of-range values on future
         // OS versions, so we use the UInt32 sentinel value via a trusted cast rather than
         // force-unwrapping.
+        // Fallback uses rawValue 0 (kCGEventNull), which is always a valid CGEventType.
         let anyInputEventType = CGEventType(rawValue: UInt32.max)
-            ?? CGEventType(rawValue: UInt32(kCGEventNull.rawValue))!
+            ?? CGEventType(rawValue: 0)!
         let idleSeconds = CGEventSource.secondsSinceLastEventType(
             .combinedSessionState,
             eventType: anyInputEventType
@@ -38,5 +42,6 @@ final class IdleDetector {
             isCurrentlyIdle = false
             onBecameActive?()
         }
+        if !nowIdle { onTick?() }
     }
 }

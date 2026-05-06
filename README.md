@@ -172,7 +172,6 @@ FocusLens/
 │   ├── GeminiSettings.swift        # UserDefaults-backed API key + enabled flag
 │   ├── BrowserClassifier.swift     # Orchestrates batch classification
 │   ├── BrowserCategoryMapper.swift # Maps Gemini labels → DB category IDs
-│   ├── BrowserBundleIds.swift      # Known browser bundle IDs
 │   ├── OllamaClient.swift          # REST actor for Ollama /api/generate
 │   ├── OllamaSettings.swift        # UserDefaults-backed Ollama config
 │   └── Agent/
@@ -371,7 +370,6 @@ FocusLens/
 │   ├── GeminiSettings.swift        # UserDefaults-backed API key + enabled flag
 │   ├── BrowserClassifier.swift     # Orchestrates batch classification
 │   ├── BrowserCategoryMapper.swift # Maps Gemini labels → DB category IDs
-│   └── BrowserBundleIds.swift      # Known browser bundle IDs
 ├── UI/
 │   ├── MenuBarView.swift
 │   ├── TodayAggregate.swift        # @Observable state, async DB refresh

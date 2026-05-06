@@ -1,7 +1,7 @@
 import Foundation
 import GRDB
 
-struct ActivitySessionStore {
+struct ActivitySessionStore: Sendable {
     private let dbPool: DatabasePool
 
     init(dbPool: DatabasePool = DatabaseManager.shared.dbPool) {
@@ -18,21 +18,16 @@ struct ActivitySessionStore {
 
     func close(id: Int64, at endDate: Date, windowTitle: String? = nil) throws {
         try dbPool.write { db in
-            let started = try ActivitySession
-                .filter(ActivitySession.Columns.id == id)
-                .fetchOne(db)
-            let duration: Double? = started.map { endDate.timeIntervalSince($0.startedAt) }
-            if let title = windowTitle {
-                try db.execute(
-                    sql: "UPDATE activity_sessions SET ended_at = ?, duration_seconds = ?, window_title = ? WHERE id = ?",
-                    arguments: [endDate, duration, title, id]
-                )
-            } else {
-                try db.execute(
-                    sql: "UPDATE activity_sessions SET ended_at = ?, duration_seconds = ? WHERE id = ?",
-                    arguments: [endDate, duration, id]
-                )
-            }
+            try db.execute(
+                sql: """
+                    UPDATE activity_sessions
+                    SET ended_at = ?,
+                        duration_seconds = (julianday(?) - julianday(started_at)) * 86400,
+                        window_title = COALESCE(?, window_title)
+                    WHERE id = ?
+                    """,
+                arguments: [endDate, endDate, windowTitle, id]
+            )
         }
     }
 
@@ -127,6 +122,15 @@ struct ActivitySessionStore {
                 arguments: [start, end]
             )
             return rows.map { (hour: $0["hour"], tier: $0["tier"], seconds: $0["total"]) }
+        }
+    }
+
+    func updateWindowTitle(id: Int64, windowTitle: String) throws {
+        try dbPool.write { db in
+            try db.execute(
+                sql: "UPDATE activity_sessions SET window_title = ? WHERE id = ?",
+                arguments: [windowTitle, id]
+            )
         }
     }
 

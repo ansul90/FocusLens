@@ -115,8 +115,9 @@ struct BrowserClassifierTests {
         let store = CategoryStore(dbPool: pool)
         let classifier = BrowserClassifier(client: fakeClient, categoryStore: store, dbPool: pool)
 
-        let updated = try await classifier.classifyPending()
-        #expect(updated == 1)
+        let result = try await classifier.classifyPending()
+        #expect(result.found == 1)
+        #expect(result.updated == 1)
         #expect(try fetchCategoryId(pool, sessionId: sessionId) == devId)
         #expect(try fetchCategoryId(pool, sessionId: xcodeId) == codingId) // unchanged — distinct from devId
     }
@@ -135,8 +136,9 @@ struct BrowserClassifierTests {
         let store = CategoryStore(dbPool: pool)
         let classifier = BrowserClassifier(client: fakeClient, categoryStore: store, dbPool: pool)
 
-        let updated = try await classifier.classifyPending()
-        #expect(updated == 0)
+        let result = try await classifier.classifyPending()
+        #expect(result.found == 0)
+        #expect(result.updated == 0)
         #expect(try fetchCategoryId(pool, sessionId: sessionId) == browserId)
     }
 
@@ -146,8 +148,9 @@ struct BrowserClassifierTests {
         let fakeClient = FakeGeminiClient(response: GeminiBatchResponse(classifications: []))
         let store = CategoryStore(dbPool: pool)
         let classifier = BrowserClassifier(client: fakeClient, categoryStore: store, dbPool: pool)
-        let updated = try await classifier.classifyPending()
-        #expect(updated == 0)
+        let result = try await classifier.classifyPending()
+        #expect(result.found == 0)
+        #expect(result.updated == 0)
     }
 
     @Test("classifyPending continues when client throws for a chunk")
@@ -164,8 +167,9 @@ struct BrowserClassifierTests {
         let store = CategoryStore(dbPool: pool)
         let classifier = BrowserClassifier(client: failClient, categoryStore: store, dbPool: pool)
 
-        let updated = try await classifier.classifyPending()
-        #expect(updated == 0) // chunk failed, session untouched
+        let result = try await classifier.classifyPending()
+        #expect(result.found == 1)
+        #expect(result.updated == 0) // chunk failed, session untouched
         #expect(try fetchCategoryId(pool, sessionId: sessionId) == browserId)
     }
 }
