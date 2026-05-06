@@ -9,6 +9,9 @@ final class IdleDetector {
     private(set) var isCurrentlyIdle = false
     private var timer: Timer?
 
+    // nonisolated: init only sets nil/false defaults; no main-actor resources allocated.
+    nonisolated init() {}
+
     func start() {
         let t = Timer(timeInterval: AppConstants.idlePollIntervalSeconds, repeats: true) { [weak self] _ in
             self?.tick()

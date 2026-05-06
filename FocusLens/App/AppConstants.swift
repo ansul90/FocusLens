@@ -34,6 +34,8 @@ enum AppConstants {
         static let requestTimeoutSeconds: TimeInterval = 15
         static let userDefaultsKeyAPIKey: String = "ai.gemini.apiKey"
         static let userDefaultsKeyEnabled: String = "ai.gemini.enabled"
+        // Free tier: 1,500 RPD / 15 RPM. At 30-min intervals = ~48 calls/day.
+        static let reclassifyIntervalSeconds: TimeInterval = 1800
     }
 
     enum Ollama {

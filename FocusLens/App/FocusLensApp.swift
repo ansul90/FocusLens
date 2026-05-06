@@ -1,4 +1,5 @@
 import SwiftUI
+import os
 
 @main
 struct FocusLensApp: App {
@@ -6,6 +7,7 @@ struct FocusLensApp: App {
     private let tracker = ActivityTracker()
     private let categorizationEngine = CategorizationEngine()
     private let browserClassifier = BrowserClassifier()
+    private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "FocusLensApp")
 
     @State private var askViewModel: AskViewModel = {
         let client = OllamaClient()
@@ -39,6 +41,9 @@ struct FocusLensApp: App {
                         await aggregate.refreshStats()
                     }
                 }
+                .task {
+                    await runReclassifyLoop()
+                }
         }
         .menuBarExtraStyle(.window)
 
@@ -54,5 +59,24 @@ struct FocusLensApp: App {
         }
         .defaultSize(width: 540, height: 420)
         .environment(aggregate)
+    }
+
+    @MainActor
+    private func runReclassifyLoop() async {
+        let settings = GeminiSettings()
+        guard settings.isEnabled, !settings.apiKey.isEmpty else { return }
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(AppConstants.AI.reclassifyIntervalSeconds))
+            guard !Task.isCancelled else { break }
+            do {
+                let result = try await browserClassifier.classifyPending()
+                if result.updated > 0 {
+                    logger.info("Auto-reclassify: \(result.updated) sessions updated")
+                    await aggregate.refreshStats()
+                }
+            } catch {
+                logger.error("Auto-reclassify failed: \(error.localizedDescription)")
+            }
+        }
     }
 }

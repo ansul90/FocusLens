@@ -1,7 +1,8 @@
 import AppKit
 import Foundation
 
-actor ActivityTracker {
+@MainActor
+final class ActivityTracker {
     private(set) var isPaused: Bool = false
     private(set) var currentAppName: String = ""
     var onSessionEnded: (@Sendable () -> Void)?
@@ -46,8 +47,7 @@ actor ActivityTracker {
         registerNotifications()
         setupIdleDetectorCallbacks()
         idleDetector.start()
-        let frontApp = await MainActor.run { NSWorkspace.shared.frontmostApplication }
-        await handleAppActivation(frontApp)
+        await handleAppActivation(NSWorkspace.shared.frontmostApplication)
     }
 
     func pause() async {
@@ -59,8 +59,7 @@ actor ActivityTracker {
     func resume() async {
         isPaused = false
         onStateChanged?(currentAppName, isPaused)
-        let frontApp = await MainActor.run { NSWorkspace.shared.frontmostApplication }
-        await handleAppActivation(frontApp)
+        await handleAppActivation(NSWorkspace.shared.frontmostApplication)
     }
 
     private func recoverOpenSessions() async {
@@ -218,7 +217,6 @@ actor ActivityTracker {
     }
 
     private func handleWake() async {
-        let frontApp = await MainActor.run { NSWorkspace.shared.frontmostApplication }
-        await handleAppActivation(frontApp)
+        await handleAppActivation(NSWorkspace.shared.frontmostApplication)
     }
 }
