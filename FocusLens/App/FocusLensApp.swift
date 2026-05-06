@@ -8,9 +8,8 @@ struct FocusLensApp: App {
     private let browserClassifier = BrowserClassifier()
 
     @State private var askViewModel: AskViewModel = {
-        let registry = ToolRegistry()
         let client = OllamaClient()
-        Task { await registry.registerDefaultTools() }
+        let registry = ToolRegistry(tools: AgentRunner.defaultTools())
         let runner = AgentRunner(llm: client, registry: registry)
         return AskViewModel(runner: runner, ollamaClient: client)
     }()

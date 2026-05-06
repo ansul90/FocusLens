@@ -42,8 +42,8 @@ final class PermissionManager {
     private static func titleFromWindowAttribute(axApp: AXUIElement, attribute: CFString) -> String? {
         var windowRef: CFTypeRef?
         guard AXUIElementCopyAttributeValue(axApp, attribute, &windowRef) == .success,
-              let window = windowRef else { return nil }
-        return titleFromAXElement(window as! AXUIElement)
+              let ref = windowRef else { return nil }
+        return titleFromAXElement(unsafeBitCast(ref, to: AXUIElement.self))
     }
 
     private static func titleFromAXElement(_ element: AXUIElement) -> String? {

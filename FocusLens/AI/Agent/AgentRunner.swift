@@ -173,17 +173,8 @@ actor AgentRunner {
             logFile.write("\n   Tool Result (\(toolName)): \(result)")
 
             messages.append(AgentMessage(role: .assistant, content: rawResponse))
-            // Truncate large tool results to avoid context overflow, but keep enough for the model to answer
-            let truncatedResult: String
-            if result.count > 2000 {
-                // Find the last complete JSON object boundary before the limit
-                let prefix = String(result.prefix(1800))
-                let lastBrace = prefix.lastIndex(of: "}") ?? prefix.endIndex
-                truncatedResult = String(prefix[..<prefix.index(after: lastBrace)]) + "]}"
-            } else {
-                truncatedResult = result
-            }
-            messages.append(AgentMessage(role: .tool, content: truncatedResult))
+            // toolJSON already truncates at AppConstants.Agent.toolResultMaxChars with valid JSON
+            messages.append(AgentMessage(role: .tool, content: result))
         }
 
         logger.warning("AgentRunner: max iterations reached")
@@ -307,18 +298,21 @@ actor AgentRunner {
     }
 }
 
-// MARK: - Default registry factory
+// MARK: - Default tools factory
 
-extension ToolRegistry {
-    /// Registers all built-in query tools.
-    func registerDefaultTools() {
-        register(CurrentTimeTool())
-        register(ListCategoriesTool())
-        register(QuerySessionsTool())
-        register(AggregateTimeTool())
-        register(TopAppsTool())
-        register(ProductivityScoreTool())
-        register(ComparePeriodsTool())
+extension AgentRunner {
+    /// Returns all built-in query tools. Used to pre-populate a ToolRegistry at
+    /// construction time, eliminating the async-registration race on app startup.
+    static func defaultTools() -> [any AgentTool] {
+        [
+            CurrentTimeTool(),
+            ListCategoriesTool(),
+            QuerySessionsTool(),
+            AggregateTimeTool(),
+            TopAppsTool(),
+            ProductivityScoreTool(),
+            ComparePeriodsTool(),
+        ]
     }
 }
 

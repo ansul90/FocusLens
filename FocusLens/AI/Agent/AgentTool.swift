@@ -23,7 +23,19 @@ protocol AgentTool: Sendable {
 
 /// Thread-safe registry of all available agent tools.
 actor ToolRegistry {
-    private var tools: [String: any AgentTool] = [:]
+    private var tools: [String: any AgentTool]
+
+    /// Creates an empty registry. Use `register(_:)` to add tools afterwards.
+    init() {
+        tools = [:]
+    }
+
+    /// Creates a pre-populated registry. All tools are registered before any
+    /// caller can observe the registry, eliminating the startup race where the
+    /// agent's system prompt would list no tools.
+    init(tools: [any AgentTool]) {
+        self.tools = Dictionary(uniqueKeysWithValues: tools.map { ($0.name, $0) })
+    }
 
     func register(_ tool: any AgentTool) {
         tools[tool.name] = tool

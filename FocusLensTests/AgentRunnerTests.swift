@@ -57,10 +57,8 @@ private func agentGenerateData(_ response: String) -> Data {
     return #"{"model":"gemma4","response":"\#(escaped)","done":true}"#.data(using: .utf8)!
 }
 
-private func makeRegistry() async -> ToolRegistry {
-    let r = ToolRegistry()
-    await r.register(CurrentTimeTool())
-    return r
+private func makeRegistry() -> ToolRegistry {
+    ToolRegistry(tools: [CurrentTimeTool()])
 }
 
 private func makeAgentOllamaSettings() -> OllamaSettings {
@@ -83,7 +81,7 @@ struct AgentRunnerTests {
         defer { AgentStubURLProtocol.handler = nil }
 
         let client = OllamaClient(settings: makeAgentOllamaSettings(), session: session)
-        let registry = await makeRegistry()
+        let registry = makeRegistry()
         let runner = AgentRunner(llm: client, registry: registry)
 
         let result = try await runner.ask("How is today?")
@@ -100,7 +98,7 @@ struct AgentRunnerTests {
         defer { AgentStubURLProtocol.handler = nil }
 
         let client = OllamaClient(settings: makeAgentOllamaSettings(), session: session)
-        let registry = await makeRegistry()
+        let registry = makeRegistry()
         let runner = AgentRunner(llm: client, registry: registry)
 
         let result = try await runner.ask("What is today's date?")
@@ -116,7 +114,7 @@ struct AgentRunnerTests {
         defer { AgentStubURLProtocol.handler = nil }
 
         let client = OllamaClient(settings: makeAgentOllamaSettings(), session: session)
-        let registry = await makeRegistry()
+        let registry = makeRegistry()
         let runner = AgentRunner(llm: client, registry: registry)
 
         let error = try await #require(throws: (any Error).self) {
@@ -137,7 +135,7 @@ struct AgentRunnerTests {
         defer { AgentStubURLProtocol.handler = nil }
 
         let client = OllamaClient(settings: makeAgentOllamaSettings(), session: session)
-        let registry = await makeRegistry()
+        let registry = makeRegistry()
         let runner = AgentRunner(llm: client, registry: registry)
 
         let result = try await runner.ask("can you answer?")
@@ -153,7 +151,7 @@ struct AgentRunnerTests {
         defer { AgentStubURLProtocol.handler = nil }
 
         let client = OllamaClient(settings: makeAgentOllamaSettings(), session: session)
-        let registry = await makeRegistry()
+        let registry = makeRegistry()
         let runner = AgentRunner(llm: client, registry: registry)
 
         let result = try await runner.ask("test")

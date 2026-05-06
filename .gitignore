@@ -23,6 +23,9 @@ DerivedData/
 # Worktrees (global location — not project-local)
 # No entry needed; worktrees are at ~/.config/superpowers/worktrees/
 
+# Editor metadata
+.cursor/
+
 # Instruments
 *.trace
 
