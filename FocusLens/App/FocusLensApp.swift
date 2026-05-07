@@ -19,33 +19,36 @@ struct FocusLensApp: App {
     var body: some Scene {
         MenuBarExtra("FocusLens", systemImage: "eye") {
             MenuBarView(aggregate: aggregate, tracker: tracker)
-                .task {
-                    await tracker.setCallbacks(
-                        onSessionEnded: { [aggregate, categorizationEngine] in
-                            Task.detached {
-                                try? categorizationEngine.batchCategorize()
-                                await aggregate.refreshStats()
-                            }
-                        },
-                        onStateChanged: { [aggregate] name, paused in
-                            Task { @MainActor in
-                                aggregate.currentAppName = name
-                                aggregate.isPaused = paused
-                            }
-                        }
-                    )
-                    LoginItemManager.registerAtLogin()
-                    await tracker.start()
-                    Task.detached { [aggregate, categorizationEngine] in
+        }
+        .menuBarExtraStyle(.window)
+        .task {
+            // Scene-level task fires at app launch, not when the popover is opened.
+            // View-level .task on MenuBarView only runs when the user clicks the icon,
+            // leaving the tracker dormant if the app is relaunched without interaction.
+            await tracker.setCallbacks(
+                onSessionEnded: { [aggregate, categorizationEngine] in
+                    Task.detached {
                         try? categorizationEngine.batchCategorize()
                         await aggregate.refreshStats()
                     }
+                },
+                onStateChanged: { [aggregate] name, paused in
+                    Task { @MainActor in
+                        aggregate.currentAppName = name
+                        aggregate.isPaused = paused
+                    }
                 }
-                .task {
-                    await runReclassifyLoop()
-                }
+            )
+            LoginItemManager.registerAtLogin()
+            await tracker.start()
+            Task.detached { [aggregate, categorizationEngine] in
+                try? categorizationEngine.batchCategorize()
+                await aggregate.refreshStats()
+            }
         }
-        .menuBarExtraStyle(.window)
+        .task {
+            await runReclassifyLoop()
+        }
 
         Window("Dashboard", id: "dashboard") {
             DashboardView()

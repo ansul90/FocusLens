@@ -5,6 +5,7 @@ struct MenuBarView: View {
     let tracker: ActivityTracker
 
     @Environment(\.openWindow) private var openWindow
+    @State private var showingQuitConfirmation = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -15,6 +16,14 @@ struct MenuBarView: View {
             controlsSection
         }
         .frame(width: 280)
+        .alert("Quit FocusLens?", isPresented: $showingQuitConfirmation) {
+            Button("Quit", role: .destructive) {
+                NSApplication.shared.terminate(nil)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The current session will be saved before quitting.")
+        }
     }
 
     private var headerSection: some View {
@@ -89,7 +98,7 @@ struct MenuBarView: View {
             }
             Divider().frame(height: 16)
             toolbarButton(systemImage: "power", tooltip: "Quit FocusLens") {
-                NSApplication.shared.terminate(nil)
+                showingQuitConfirmation = true
             }
         }
         .frame(maxWidth: .infinity)
