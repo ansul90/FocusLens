@@ -4,11 +4,75 @@ A native macOS menu bar app that silently tracks your app and browser activity, 
 
 ---
 
+## Product Overview *(for Product & Design teams)*
+
+FocusLens is a privacy-first productivity tracker for macOS. It silently monitors which apps and browser tabs you use, organises that time into meaningful productivity categories, and lets you ask plain-English questions about your habits — all without any data leaving your machine. Think of it as a RescueTime alternative where you stay in full control of your data, powered by on-device and opt-in cloud AI.
+
+### What's Available Today
+
+**Activity Tracking**
+- Silently records every app switch and browser tab title in the background
+- Detects idle time (10+ min) and filters out noise (sessions under 60s)
+- Lets you exclude specific apps from tracking entirely
+- Persists everything locally — no account required, no sync
+
+**Menu Bar Dashboard**
+- Shows your current active app and today's total tracked time at a glance
+- Quick view of your top 5 apps by time; one click opens the full dashboard
+- Pause/resume tracking from the menu bar icon
+
+**Activity Dashboard**
+- Navigate any past day to review how you spent your time
+- Productivity score (0–100) based on how your categories are weighted
+- Category breakdown chart and top apps by duration
+- Hourly timeline colour-coded by productivity tier
+
+**Smart Categorisation**
+- 9 built-in categories: Development, Dev Tools, AI Tools, Notes & PKM, Communication, Office, Browser, Media, Utilities
+- Each category has a productivity tier from −2 (very distracting) to +2 (very productive)
+- Custom rules let you assign apps by name, window title, or pattern
+
+**AI-Powered Browser Classification (Gemini)**
+- Browser sessions are generically labelled "Browser" by default
+- Once Gemini is configured, FocusLens **automatically reclassifies pending browser sessions every 30 minutes** in the background — no user action required
+- A "Reclassify Now" button in Settings is also available for on-demand re-processing
+- Sessions are re-tagged as News, Learning, Entertainment, Development, etc.
+- Titles are the only data sent; the AI key is opt-in and user-supplied
+
+**Ask FocusLens — Conversational AI Agent**
+- Type natural-language questions: "How much time did I spend coding today?", "Compare this week to last week", "What was I doing at 3pm yesterday?"
+- A local Ollama model answers using your actual activity data — nothing leaves your machine
+- Supports time-range queries, category breakdowns, app rankings, productivity comparisons
+
+**Settings & Controls**
+- Manage categories and categorisation rules
+- Configure idle detection threshold and minimum session length
+- Set up Ollama (local AI) and Gemini (cloud AI) backends separately
+- Never-track list for sensitive apps
+
+**Companion MCP Server** (`focuslens-mcp/`)
+- Exposes FocusLens data to Claude and other LLM hosts via the Model Context Protocol
+- Supports app lookups, web-enriched insights, and a rendered dashboard view
+
+### Roadmap
+
+| Phase | Theme | Key Capabilities |
+|-------|-------|-----------------|
+| **Phase 4** | Goals & Alerts | Set daily targets ("≥2h coding", "≤30m social media"); threshold alerts; distraction-pattern detection; proactive nudges before historically distracted time blocks |
+| **Phase 5** | Focus Sessions | Pomodoro-style timers (25/50/90 min) from the menu bar; soft app blocking during focus sessions; focus analytics (completion rate, on-task %) |
+| **Phase 6** | Search & Export | Full-text search across all window titles; CSV/JSON export; configurable data retention with auto-deletion of raw sessions; daily highlights and weekly narrative journals |
+
+### Product Direction
+
+FocusLens is moving from a passive time-tracker toward an **active productivity copilot** — one that understands your patterns, holds you to your goals, and intervenes before distractions take hold. Phases 1–3 (tracking → categorisation → conversational AI) are complete; the next phase shifts from reporting the past to shaping the present.
+
+---
+
 ## Features
 
 ### Activity Tracking
 - Monitors app switches and window titles via the macOS Accessibility API
-- Detects idle time (default: 5 minutes) and excludes it from tracked time
+- Detects idle time (default: 10 minutes) and excludes it from tracked time
 - Discards sessions shorter than 60 seconds (configurable in `AppConstants.swift`)
 - Persists sessions locally in SQLite — no data leaves your machine
 - Recovers gracefully after sleep/wake and crashes (WAL mode + open-session recovery on relaunch)
@@ -75,16 +139,18 @@ Browsers capture the page title for every session. FocusLens sends these titles 
 
 - Model: `gemini-2.5-flash`
 - Batches up to 25 sessions per request
-- **Reclassify Now** button in Settings for on-demand re-processing of all pending browser sessions
+- **Automatic background loop** runs every 30 minutes when Gemini is enabled, classifying any sessions still tagged "Browser"
+- **Reclassify Now** button in Settings for on-demand re-processing
 - Prompt injection defence: page titles are treated as data only; responses validated against an allow-list
 
 #### When Gemini is called
 
 | Trigger | Behaviour |
 |---|---|
-| **Reclassify Now button** | On-demand from the AI settings tab — classifies all sessions still tagged "Browser" |
+| **Background loop** | Runs every 30 minutes (`reclassifyIntervalSeconds = 1800`) while the app is running and Gemini is configured — classifies all pending "Browser" sessions in batches of up to 25 |
+| **Reclassify Now button** | On-demand from the AI settings tab — same logic as the background loop, triggered manually |
 
-> Automatic classification on session-end and app-launch is implemented but currently disabled (commented out in `FocusLensApp.swift`). New browser sessions accumulate in the "Browser" category until manual reclassification.
+> The background loop is started in `FocusLensApp.swift` via `runReclassifyLoop()` and only runs if the user has set a Gemini API key and toggled the integration on.
 
 ### Settings
 - **General** — displays current idle threshold and minimum session length (compile-time constants)
@@ -245,7 +311,7 @@ App Sandbox is disabled (required for Accessibility API access). Hardened Runtim
 
 ### Activity Tracking
 - Monitors app switches and window titles via the macOS Accessibility API
-- Detects idle time (default: 5 minutes) and excludes it from tracked time
+- Detects idle time (default: 10 minutes) and excludes it from tracked time
 - Discards sessions shorter than 60 seconds (configurable in `AppConstants.swift`)
 - Persists sessions locally in SQLite — no data leaves your machine
 - Recovers gracefully after sleep/wake and crashes (WAL mode + open-session recovery on relaunch)
@@ -274,16 +340,16 @@ Browsers capture the page title for every session. FocusLens sends these titles 
 
 - Model: `gemini-2.5-flash`
 - Batches up to 25 sessions per request
-- **Reclassify Now** button in Settings for on-demand re-processing of all pending browser sessions
+- **Automatic background loop** runs every 30 minutes when Gemini is enabled
+- **Reclassify Now** button in Settings for on-demand re-processing
 - Prompt injection defence: page titles are treated as data only; responses validated against an allow-list
 
 #### When Gemini is called
 
 | Trigger | Behaviour |
 |---|---|
-| **Reclassify Now button** | On-demand from the AI settings tab — classifies all sessions still tagged "Browser" |
-
-> Automatic classification on session-end and app-launch is implemented but currently disabled (commented out in `FocusLensApp.swift`). New browser sessions accumulate in the "Browser" category until manual reclassification.
+| **Background loop** | Runs every 30 minutes (`reclassifyIntervalSeconds = 1800`) while Gemini is configured — classifies all pending "Browser" sessions |
+| **Reclassify Now button** | On-demand from the AI settings tab — same logic, triggered manually |
 
 ### Settings
 - **General** — displays current idle threshold and minimum session length (compile-time constants)

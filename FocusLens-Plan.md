@@ -179,7 +179,7 @@ See "Locked Technical Choices" above for project-shape decisions. These are the 
 
 **What's in**:
 - Activity tracking via `NSWorkspace.didActivateApplicationNotification` + `AXUIElement` for window titles
-- Idle detection — poll every 30s, mark idle after 5 min of no input
+- Idle detection — poll every 30s, mark idle after 10 min of no input
 - Accessibility permission handling with graceful degradation (app-name-only if denied)
 - Menu bar UI via `MenuBarExtra` (`.window` style) — SF Symbol `eye` icon, current app row, today's top 10 apps ranked by time
 - Pause/resume toggle (SwiftUI `Toggle` inside `MenuBarView`)

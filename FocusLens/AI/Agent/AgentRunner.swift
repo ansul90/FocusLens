@@ -1,4 +1,5 @@
 import Foundation
+import GRDB
 import os
 
 // MARK: - Message model
@@ -51,19 +52,25 @@ enum AgentError: Error, Sendable {
 actor AgentRunner {
     private let llm: OllamaClient
     private let registry: ToolRegistry
+    private let dbPool: DatabasePool
     private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "AgentRunner")
 
-    init(llm: OllamaClient = OllamaClient(), registry: ToolRegistry) {
+    init(llm: OllamaClient = OllamaClient(), registry: ToolRegistry, dbPool: DatabasePool = DatabaseManager.shared.dbPool) {
         self.llm = llm
         self.registry = registry
+        self.dbPool = dbPool
     }
 
     // MARK: - Public API
 
+    func register(_ tool: any AgentTool) async {
+        await registry.register(tool)
+    }
+
     func ask(_ userQuery: String, priorContext: [AgentMessage] = []) async throws -> AgentResult {
         guard await llm.isAvailable() else { throw AgentError.ollamaUnavailable }
 
-        let systemPrompt = await SystemPrompt.build(registry: registry)
+        let systemPrompt = await SystemPrompt.build(registry: registry, dbPool: dbPool)
         var messages: [AgentMessage] = priorContext + [
             AgentMessage(role: .user, content: userQuery)
         ]
@@ -207,74 +214,29 @@ actor AgentRunner {
         }
 
         switch toolName {
-        case "top_apps":
-            if let apps = json["apps"] as? [[String: Any]] {
-                let lines = apps.prefix(5).compactMap { app -> String? in
-                    guard let rank = app["rank"] as? Int,
-                          let name = app["app"] as? String,
-                          let mins = app["minutes"] as? Double else { return nil }
-                    let h = Int(mins / 60), m = Int(mins.truncatingRemainder(dividingBy: 60))
-                    let dur = h > 0 ? "\(h)h \(m)m" : "\(m)m"
-                    return "\(rank). \(name) — \(dur)"
-                }.joined(separator: "\n")
-                let date = json["date"] as? String ?? "the selected date"
-                return "Here are your top apps for \(date):\n\(lines)"
-            }
-
-        case "aggregate_time":
-            if let items = json["data"] as? [[String: Any]] {
-                let groupBy = json["group_by"] as? String ?? "group"
-                let dateRange = json["date_range"] as? String ?? "the selected date"
-                let lines = items.prefix(8).compactMap { item -> String? in
-                    guard let label = item["label"] as? String,
-                          let mins = item["minutes"] as? Double else { return nil }
-                    let h = Int(mins / 60), m = Int(mins.truncatingRemainder(dividingBy: 60))
-                    let dur = h > 0 ? "\(h)h \(m)m" : "\(m)m"
-                    return "• \(label): \(dur)"
-                }.joined(separator: "\n")
-                return "Time by \(groupBy) on \(dateRange):\n\(lines)"
-            }
-
-        case "productivity_score":
+        case "get_activity":
+            let range = json["date_range"] as? String ?? "the selected period"
             if let score = json["score"] as? Int,
                let totalMins = json["total_active_minutes"] as? Double {
                 let h = Int(totalMins / 60), m = Int(totalMins.truncatingRemainder(dividingBy: 60))
                 let dur = h > 0 ? "\(h)h \(m)m" : "\(m)m"
-                let date = json["date"] as? String ?? "the selected date"
-                return "Your productivity score on \(date) was \(score)/100 with \(dur) of tracked activity."
-            }
-
-        case "compare_periods":
-            if let comparison = json["comparison"] as? [[String: Any]] {
-                let pA = json["period_a"] as? String ?? "period A"
-                let pB = json["period_b"] as? String ?? "period B"
-                let lines = comparison.prefix(5).compactMap { row -> String? in
-                    guard let cat = row["category"] as? String,
-                          let change = row["change_minutes"] as? Double else { return nil }
-                    let sign = change >= 0 ? "+" : ""
-                    return "• \(cat): \(sign)\(Int(change))m"
-                }.joined(separator: "\n")
-                return "Comparing \(pA) vs \(pB):\n\(lines)"
-            }
-
-        case "list_categories":
-            if let categories = json.isEmpty ? nil : Optional(json),
-               let arr = (try? JSONSerialization.jsonObject(with: jsonResult.data(using: .utf8)!)) as? [[String: Any]] {
-                let tierLabel = { (t: Int) -> String in
-                    switch t {
-                    case 2: return "Very Productive"
-                    case 1: return "Productive"
-                    case 0: return "Neutral"
-                    case -1: return "Distracting"
-                    case -2: return "Very Distracting"
-                    default: return "Unknown"
-                    }
+                var lines = "Productivity score: \(score)/100, active time: \(dur)"
+                if let apps = json["top_apps"] as? [[String: Any]] {
+                    let appList = apps.prefix(5).compactMap { app -> String? in
+                        guard let name = app["app"] as? String, let mins = app["minutes"] as? Double else { return nil }
+                        return "\(name) (\(Int(mins))m)"
+                    }.joined(separator: ", ")
+                    lines += "\nTop apps: \(appList)"
                 }
-                let lines = arr.compactMap { cat -> String? in
-                    guard let name = cat["name"] as? String, let tier = cat["tier"] as? Int else { return nil }
-                    return "• \(name) (\(tierLabel(tier)))"
-                }.joined(separator: "\n")
-                return "Your productivity categories are:\n\(lines)"
+                return "For \(range): \(lines)"
+            }
+
+        case "classify_app":
+            if let appName = json["app_name"] as? String,
+               let verdict = json["verdict"] as? String {
+                let summary = json["summary"] as? String ?? ""
+                let cached = json["cached"] as? Bool ?? false
+                return "\(appName) is classified as \(verdict)\(summary.isEmpty ? "" : " — \(summary)")\(cached ? " (cached)" : "")."
             }
 
         case "query_sessions":
@@ -306,12 +268,9 @@ extension AgentRunner {
     static func defaultTools() -> [any AgentTool] {
         [
             CurrentTimeTool(),
-            ListCategoriesTool(),
+            GetActivityTool(),
             QuerySessionsTool(),
-            AggregateTimeTool(),
-            TopAppsTool(),
-            ProductivityScoreTool(),
-            ComparePeriodsTool(),
+            ClassifyAppTool(),
         ]
     }
 }

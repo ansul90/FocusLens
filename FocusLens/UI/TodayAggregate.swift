@@ -11,9 +11,17 @@ final class TodayAggregate {
     private(set) var productivityScore: Int = 50
     private(set) var productivityTierBreakdown: [(tier: Int, seconds: Double)] = []
     private(set) var hourlyTierBreakdown: [(hour: Int, tier: Int, seconds: Double)] = []
+    private(set) var topInterruptors: [(appName: String, appBundleId: String, totalSeconds: Double, tier: Int)] = []
+    private(set) var topWindowTitles: [(windowTitle: String, appName: String, appBundleId: String, totalSeconds: Double, tier: Int)] = []
+    private(set) var previousDayActiveSeconds: Double = 0
+    private(set) var previousDayProductivityScore: Int = 50
+    private(set) var previousDayHasData: Bool = false
     var currentAppName: String = ""
     var isPaused: Bool = false
     private(set) var selectedDate: Date = Date()
+
+    var activeSecondsDelta: Double { totalActiveSeconds - previousDayActiveSeconds }
+    var productivityScoreDelta: Int { productivityScore - previousDayProductivityScore }
 
     private let logger = Logger(subsystem: "com.focuslens.app", category: "TodayAggregate")
     private let store: ActivitySessionStore
@@ -34,6 +42,11 @@ final class TodayAggregate {
         let totalActiveSeconds: Double
         let hourlyTierBreakdown: [(hour: Int, tier: Int, seconds: Double)]
         let rawBreakdown: [(categoryId: Int64?, totalSeconds: Double)]
+        let topInterruptors: [(appName: String, appBundleId: String, totalSeconds: Double, tier: Int)]
+        let topWindowTitles: [(windowTitle: String, appName: String, appBundleId: String, totalSeconds: Double, tier: Int)]
+        let previousActiveSeconds: Double
+        let previousRawBreakdown: [(categoryId: Int64?, totalSeconds: Double)]
+        let previousHourlyTierBreakdown: [(hour: Int, tier: Int, seconds: Double)]
         let categories: [Category]
     }
 
@@ -41,6 +54,7 @@ final class TodayAggregate {
         let store = self.store
         let categoryStore = self.categoryStore
         let date = self.selectedDate
+        let previousDate = Calendar.current.date(byAdding: .day, value: -1, to: date)!
 
         let fetched = await Task.detached(priority: .utility) { () -> FetchedSnapshot in
             FetchedSnapshot(
@@ -48,6 +62,11 @@ final class TodayAggregate {
                 totalActiveSeconds: (try? store.fetchActiveSeconds(for: date)) ?? 0,
                 hourlyTierBreakdown: (try? store.fetchHourlyTierBreakdown(for: date)) ?? [],
                 rawBreakdown: (try? store.fetchCategoryBreakdown(for: date)) ?? [],
+                topInterruptors: (try? store.fetchTopInterruptors(for: date, limit: 5)) ?? [],
+                topWindowTitles: (try? store.fetchTopWindowTitles(for: date, limit: 5)) ?? [],
+                previousActiveSeconds: (try? store.fetchActiveSeconds(for: previousDate)) ?? 0,
+                previousRawBreakdown: (try? store.fetchCategoryBreakdown(for: previousDate)) ?? [],
+                previousHourlyTierBreakdown: (try? store.fetchHourlyTierBreakdown(for: previousDate)) ?? [],
                 categories: (try? categoryStore.fetchAllCategories()) ?? []
             )
         }.value
@@ -57,51 +76,26 @@ final class TodayAggregate {
         topApps = fetched.topApps
         totalActiveSeconds = fetched.totalActiveSeconds
         hourlyTierBreakdown = fetched.hourlyTierBreakdown
-        refreshCategoryBreakdown(rawBreakdown: fetched.rawBreakdown, categories: fetched.categories)
+        topInterruptors = fetched.topInterruptors
+        topWindowTitles = fetched.topWindowTitles
+        previousDayActiveSeconds = fetched.previousActiveSeconds
+        previousDayHasData = fetched.previousActiveSeconds > 0
+
+        let todayResult = computeProductivityScore(
+            rawBreakdown: fetched.rawBreakdown,
+            hourlyTierBreakdown: fetched.hourlyTierBreakdown,
+            categories: fetched.categories
+        )
+        categoryBreakdown = todayResult.categoryBreakdown
+        productivityScore = todayResult.score
+        productivityTierBreakdown = todayResult.tierBreakdown
+
+        let prevResult = computeProductivityScore(
+            rawBreakdown: fetched.previousRawBreakdown,
+            hourlyTierBreakdown: fetched.previousHourlyTierBreakdown,
+            categories: fetched.categories
+        )
+        previousDayProductivityScore = prevResult.score
     }
 
-    private func refreshCategoryBreakdown(
-        rawBreakdown: [(categoryId: Int64?, totalSeconds: Double)],
-        categories: [Category]
-    ) {
-        guard !categories.isEmpty else {
-            categoryBreakdown = []
-            productivityScore = 50
-            productivityTierBreakdown = []
-            return
-        }
-
-        let categoryMap = Dictionary(uniqueKeysWithValues: categories.compactMap { c -> (Int64, Category)? in
-            guard let id = c.id else { return nil }
-            return (id, c)
-        })
-
-        var breakdown: [(category: Category, totalSeconds: Double)] = []
-        var weightedSum: Double = 0
-        var categorizedTotal: Double = 0
-
-        for entry in rawBreakdown {
-            guard let categoryId = entry.categoryId,
-                  let category = categoryMap[categoryId] else { continue }
-            breakdown.append((category: category, totalSeconds: entry.totalSeconds))
-            weightedSum += Double(category.productivityScore) * entry.totalSeconds
-            categorizedTotal += entry.totalSeconds
-        }
-
-        categoryBreakdown = breakdown.sorted { $0.totalSeconds > $1.totalSeconds }
-
-        var tierTotals: [Int: Double] = [:]
-        for entry in hourlyTierBreakdown {
-            tierTotals[entry.tier, default: 0] += entry.seconds
-        }
-        productivityTierBreakdown = tierTotals.map { (tier: $0.key, seconds: $0.value) }
-            .sorted { $0.tier > $1.tier }
-
-        if categorizedTotal > 0 {
-            let avg = weightedSum / categorizedTotal
-            productivityScore = max(0, min(100, Int(((avg + 2.0) / 4.0) * 100)))
-        } else {
-            productivityScore = 50
-        }
-    }
 }

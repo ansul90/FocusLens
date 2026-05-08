@@ -1,7 +1,7 @@
 import Foundation
 
 enum AppConstants {
-    static let idleThresholdSeconds: TimeInterval = 300
+    static let idleThresholdSeconds: TimeInterval = 600
     static let minimumSessionSeconds: TimeInterval = 60
     static let idlePollIntervalSeconds: TimeInterval = 30
     static let menuRefreshIntervalSeconds: TimeInterval = 1
@@ -51,5 +51,19 @@ enum AppConstants {
     enum Agent {
         static let maxIterations: Int = 15
         static let toolResultMaxChars: Int = 4000
+    }
+
+    enum MCP {
+        static let uvPath: String = "\(NSHomeDirectory())/.local/bin/uv"
+        static let serverDirectory: String = {
+            let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            // During development, override via UserDefaults key "mcp.serverDirectory"
+            if let override = UserDefaults.standard.string(forKey: "mcp.serverDirectory") {
+                return override
+            }
+            return appSupport.appendingPathComponent("FocusLens/mcp").path
+        }()
+        static let serverScript: String = "server.py"
+        static let userDefaultsKeyServerDirectory: String = "mcp.serverDirectory"
     }
 }

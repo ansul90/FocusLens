@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @Environment(TodayAggregate.self) private var aggregate
+    @Environment(RangeAggregate.self) private var rangeAggregate
     @Environment(AskViewModel.self) private var askViewModel
 
     private static let dateFormatter: DateFormatter = {
@@ -10,85 +11,88 @@ struct DashboardView: View {
         return f
     }()
 
-    private static let minimumBarSeconds: Double = 1.0
+    @State private var selectedNav: NavDestination? = .stats
 
-    @State private var selectedTab: DashboardTab = .stats
-
-    private enum DashboardTab: String, CaseIterable {
-        case stats = "Stats"
-        case ask = "Ask FocusLens"
-
-        var icon: String {
-            switch self {
-            case .stats: return "chart.bar.fill"
-            case .ask: return "bubble.left.and.bubble.right.fill"
-            }
-        }
+    private enum NavDestination: String, Hashable {
+        case stats, trends, ask
+        case settingsGeneral, settingsCategories, settingsNeverTrack, settingsAI
     }
 
     private var isToday: Bool {
         Calendar.current.isDateInToday(aggregate.selectedDate)
     }
 
-    private var formattedDate: String {
-        Self.dateFormatter.string(from: aggregate.selectedDate)
-    }
-
     var body: some View {
-        VStack(spacing: 0) {
-            tabBar
-            Divider()
-
-            switch selectedTab {
+        NavigationSplitView {
+            List(selection: $selectedNav) {
+                Section("Overview") {
+                    Label("Today", systemImage: "chart.bar.fill")
+                        .tag(NavDestination.stats)
+                    Label("Trends", systemImage: "chart.line.uptrend.xyaxis")
+                        .tag(NavDestination.trends)
+                    Label("Ask FocusLens", systemImage: "bubble.left.and.bubble.right.fill")
+                        .tag(NavDestination.ask)
+                }
+                Section("Settings") {
+                    Label("General", systemImage: "gear")
+                        .tag(NavDestination.settingsGeneral)
+                    Label("Categories", systemImage: "tag")
+                        .tag(NavDestination.settingsCategories)
+                    Label("Never Track", systemImage: "eye.slash")
+                        .tag(NavDestination.settingsNeverTrack)
+                    Label("AI", systemImage: "sparkles")
+                        .tag(NavDestination.settingsAI)
+                }
+            }
+            .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 200)
+        } detail: {
+            switch selectedNav ?? .stats {
             case .stats:
                 statsContent
+            case .trends:
+                TrendsView()
+                    .environment(rangeAggregate)
             case .ask:
                 AskFocusLensView(viewModel: askViewModel)
+            case .settingsGeneral:
+                GeneralSettingsTab()
+            case .settingsCategories:
+                CategorySettingsView()
+            case .settingsNeverTrack:
+                NeverTrackTab()
+            case .settingsAI:
+                AISettingsView()
             }
         }
-        .frame(width: 680, height: 540)
+        .frame(minWidth: 720, minHeight: 520)
     }
 
-    // MARK: - Tab bar
-
-    private var tabBar: some View {
-        HStack(spacing: 0) {
-            ForEach(DashboardTab.allCases, id: \.self) { tab in
-                Button {
-                    selectedTab = tab
-                } label: {
-                    Label(tab.rawValue, systemImage: tab.icon)
-                        .font(.callout)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(
-                            selectedTab == tab
-                                ? Color.accentColor.opacity(0.12)
-                                : Color.clear,
-                            in: RoundedRectangle(cornerRadius: 6)
-                        )
-                        .foregroundStyle(selectedTab == tab ? Color.accentColor : Color.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-            Spacer()
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 4)
-    }
-
-    // MARK: - Stats content (original dashboard)
+    // MARK: - Stats content
 
     private var statsContent: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            dateHeader
-            topSection
-            Divider()
-            middleSection
-            Divider()
-            bottomSection
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                dateHeader
+                    .padding(.bottom, 16)
+
+                heroRow
+                    .padding(.bottom, 16)
+
+                Divider()
+
+                midRow
+                    .padding(.vertical, 16)
+
+                Divider()
+
+                bottomRow
+                    .padding(.top, 16)
+                    .padding(.bottom, 20)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .padding(20)
     }
 
     // MARK: - Date Header
@@ -137,33 +141,58 @@ struct DashboardView: View {
                 .foregroundStyle(.secondary)
             }
         }
-        .padding(.bottom, 12)
     }
 
-    // MARK: - Top Section: Gauge + Summary
+    // MARK: - Hero Row: time logged + productivity gauge
 
-    private var topSection: some View {
-        HStack(spacing: 20) {
-            ProductivityGaugeView(score: aggregate.productivityScore)
-                .frame(width: 120, height: 120)
+    private var heroRow: some View {
+        HStack(alignment: .top, spacing: 24) {
+            HeroTimeView(
+                totalSeconds: aggregate.totalActiveSeconds,
+                previousSeconds: aggregate.previousDayActiveSeconds,
+                hasComparison: aggregate.previousDayHasData
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            summaryColumn
-        }
-        .padding(.vertical, 16)
-    }
-
-    private var summaryColumn: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(DurationFormatter.string(from: aggregate.totalActiveSeconds))
-                    .font(.title2).bold()
-                Text("tracked")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .center, spacing: 6) {
+                ProductivityGaugeView(score: aggregate.productivityScore)
+                    .frame(width: 110, height: 110)
+                DeltaCaption(
+                    delta: Double(aggregate.productivityScoreDelta),
+                    unit: .points,
+                    hasComparison: aggregate.previousDayHasData
+                )
             }
+            .frame(width: 160)
+        }
+    }
+
+    // MARK: - Mid Row: timeline + categories
+
+    private var midRow: some View {
+        HStack(alignment: .top, spacing: 20) {
+            timelineColumn
+                .frame(maxWidth: .infinity)
+
+            Divider()
+
+            categoriesColumn
+                .frame(width: 260)
+        }
+    }
+
+    private var timelineColumn: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("TIMELINE")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            HourlyTierChart(hourlyTierBreakdown: aggregate.hourlyTierBreakdown)
+                .frame(height: 90)
 
             ProductivityBreakdownBar(breakdown: aggregate.productivityTierBreakdown)
-                .frame(height: 12)
+                .frame(height: 8)
+                .padding(.top, 4)
 
             tierLegend
         }
@@ -178,16 +207,13 @@ struct DashboardView: View {
             (tierSeconds[tier] ?? 0) > 0
         }
 
-        return VStack(alignment: .leading, spacing: 2) {
+        return HStack(spacing: 12) {
             ForEach(activeTiers, id: \.self) { tier in
                 HStack(spacing: 4) {
                     Circle()
                         .fill(TierColors.color(for: tier))
-                        .frame(width: 8, height: 8)
+                        .frame(width: 6, height: 6)
                     Text(TierColors.label(for: tier))
-                        .font(.caption2)
-                    Spacer()
-                    Text(DurationFormatter.string(from: tierSeconds[tier] ?? 0))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -195,19 +221,8 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Middle Section: Categories + Top Apps
-
-    private var middleSection: some View {
-        HStack(alignment: .top, spacing: 0) {
-            categoriesColumn
-            Divider().padding(.horizontal, 12)
-            appsColumn
-        }
-        .padding(.vertical, 16)
-    }
-
     private var categoriesColumn: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("CATEGORIES")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -217,22 +232,32 @@ struct DashboardView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             } else {
-                let maxCatSeconds = aggregate.categoryBreakdown.first?.totalSeconds ?? Self.minimumBarSeconds
-                ForEach(aggregate.categoryBreakdown.prefix(8), id: \.category.name) { entry in
-                    CategoryBarRow(
+                ForEach(aggregate.categoryBreakdown.prefix(6), id: \.category.name) { entry in
+                    CategoryPercentRow(
                         name: entry.category.name,
                         colorHex: entry.category.colorHex,
                         seconds: entry.totalSeconds,
-                        maxSeconds: maxCatSeconds
+                        totalSeconds: aggregate.totalActiveSeconds
                     )
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var appsColumn: some View {
-        VStack(alignment: .leading, spacing: 8) {
+    // MARK: - Bottom Row: top apps | top interruptors | top window titles
+
+    private var bottomRow: some View {
+        HStack(alignment: .top, spacing: 0) {
+            topAppsColumn
+            Divider().padding(.horizontal, 12)
+            topInterruptorsColumn
+            Divider().padding(.horizontal, 12)
+            topWindowTitlesColumn
+        }
+    }
+
+    private var topAppsColumn: some View {
+        VStack(alignment: .leading, spacing: 6) {
             Text("TOP APPS")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -242,32 +267,63 @@ struct DashboardView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(aggregate.topApps.prefix(6), id: \.appName) { app in
-                    HStack {
-                        Text(app.appName)
-                            .font(.callout)
-                            .lineLimit(1)
-                        Spacer()
-                        Text(DurationFormatter.string(from: app.totalSeconds))
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                    }
+                ForEach(aggregate.topApps.prefix(5), id: \.appName) { app in
+                    AppListRow(
+                        appName: app.appName,
+                        seconds: app.totalSeconds,
+                        totalSeconds: aggregate.totalActiveSeconds
+                    )
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Bottom Section: Timeline
-
-    private var bottomSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("TIMELINE")
+    private var topInterruptorsColumn: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("TOP INTERRUPTORS")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            HourlyTierChart(hourlyTierBreakdown: aggregate.hourlyTierBreakdown)
-                .frame(height: 100)
+
+            if aggregate.topInterruptors.isEmpty {
+                Text("No distractions logged")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(aggregate.topInterruptors, id: \.appName) { app in
+                    AppListRow(
+                        appName: app.appName,
+                        seconds: app.totalSeconds,
+                        totalSeconds: aggregate.totalActiveSeconds,
+                        tierTint: TierColors.color(for: app.tier)
+                    )
+                }
+            }
         }
-        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var topWindowTitlesColumn: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("TOP WINDOWS")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            if aggregate.topWindowTitles.isEmpty {
+                Text("No window data available")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(aggregate.topWindowTitles, id: \.windowTitle) { entry in
+                    WindowTitlePillRow(
+                        title: entry.windowTitle,
+                        appName: entry.appName,
+                        seconds: entry.totalSeconds,
+                        tier: entry.tier
+                    )
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

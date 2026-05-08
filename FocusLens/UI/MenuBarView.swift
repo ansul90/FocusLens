@@ -82,11 +82,6 @@ struct MenuBarView: View {
                 openWindow(id: "dashboard")
             }
             Divider().frame(height: 16)
-            toolbarButton(systemImage: "gearshape", tooltip: "Settings") {
-                NSApp.activate(ignoringOtherApps: true)
-                openWindow(id: "settings")
-            }
-            Divider().frame(height: 16)
             toolbarButton(
                 systemImage: aggregate.isPaused ? "play.fill" : "pause.fill",
                 tooltip: aggregate.isPaused ? "Resume" : "Pause"

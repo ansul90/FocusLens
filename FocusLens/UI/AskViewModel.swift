@@ -54,6 +54,21 @@ final class AskViewModel {
 
     // MARK: - Lifecycle
 
+    func startMCP() async {
+        do {
+            try await MCPClient.shared.start()
+            let tools = await MCPClient.shared.agentTools()
+            // Only register render_report from MCP — the data tools are covered natively.
+            let filtered = tools.filter { $0.name == "render_report" }
+            for tool in filtered {
+                await runner.register(tool)
+            }
+            logger.info("MCP: registered \(filtered.count) tool(s) (render_report only)")
+        } catch {
+            logger.error("MCP startup failed: \(error.localizedDescription)")
+        }
+    }
+
     func checkAvailability() async {
         let available = await ollamaClient.isAvailable()
         ollamaAvailable = available
@@ -153,35 +168,27 @@ final class AskViewModel {
         // Add a one-line data summary specific to each tool
         if let dict = parsed as? [String: Any] {
             switch toolName {
-            case "top_apps":
-                if let apps = dict["apps"] as? [[String: Any]] {
-                    let names = apps.prefix(8).compactMap { $0["app"] as? String }.joined(separator: ", ")
-                    summary += ". Result: top apps were \(names)"
+            case "get_activity":
+                if let score = dict["score"] as? Int, let totalMins = dict["total_active_minutes"] as? Double {
+                    let apps = (dict["top_apps"] as? [[String: Any]])?
+                        .prefix(5).compactMap { $0["app"] as? String }.joined(separator: ", ") ?? ""
+                    summary += ". Result: score=\(score)/100, \(Int(totalMins))m active, top apps: \(apps)"
                 }
-            case "aggregate_time":
-                if let items = dict["data"] as? [[String: Any]] {
-                    let labels = items.prefix(8).compactMap { $0["label"] as? String }.joined(separator: ", ")
-                    summary += ". Result: \(labels)"
-                }
-            case "productivity_score":
-                if let score = dict["score"] as? Int {
-                    summary += ". Result: score=\(score)/100"
-                }
-            case "compare_periods":
-                if let comparison = dict["comparison"] as? [[String: Any]] {
-                    let cats = comparison.prefix(5).compactMap { $0["category"] as? String }.joined(separator: ", ")
-                    summary += ". Result: compared \(cats)"
+            case "classify_app":
+                if let appName = dict["app_name"] as? String, let verdict = dict["verdict"] as? String {
+                    summary += ". Result: \(appName)=\(verdict)"
                 }
             case "current_time":
                 if let today = dict["today"] as? String {
                     summary += ". Result: today=\(today)"
                 }
+            case "query_sessions":
+                if let count = dict["count"] as? Int {
+                    summary += ". Result: \(count) sessions"
+                }
             default:
                 break
             }
-        } else if let arr = parsed as? [[String: Any]], toolName == "list_categories" {
-            let names = arr.compactMap { $0["name"] as? String }.joined(separator: ", ")
-            summary += ". Result: \(names)"
         }
 
         return summary

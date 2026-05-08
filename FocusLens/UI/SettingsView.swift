@@ -1,26 +1,9 @@
 import SwiftUI
 import os
 
-struct SettingsView: View {
-    var body: some View {
-        TabView {
-            GeneralSettingsTab()
-                .tabItem { Label("General", systemImage: "gear") }
-            CategorySettingsView()
-                .tabItem { Label("Categories", systemImage: "tag") }
-            NeverTrackTab()
-                .tabItem { Label("Never Track", systemImage: "eye.slash") }
-            AISettingsView()
-                .tabItem { Label("AI", systemImage: "sparkles") }
-        }
-        .frame(minWidth: 520, minHeight: 380)
-        .padding(8)
-    }
-}
-
 // MARK: - General tab
 
-private struct GeneralSettingsTab: View {
+struct GeneralSettingsTab: View {
     var body: some View {
         Form {
             Section("Tracking") {
@@ -42,7 +25,7 @@ private struct GeneralSettingsTab: View {
 
 // MARK: - Never-Track tab
 
-private struct NeverTrackTab: View {
+struct NeverTrackTab: View {
     @State private var bundleIds: [String] = []
     @State private var newBundleId = ""
     @State private var store = NeverTrackStore()

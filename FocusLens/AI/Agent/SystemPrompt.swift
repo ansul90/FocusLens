@@ -1,14 +1,23 @@
 import Foundation
+import GRDB
 
 enum SystemPrompt {
 
-    static func build(registry: ToolRegistry) async -> String {
+    static func build(registry: ToolRegistry, dbPool: DatabasePool) async -> String {
         let toolsSection = await registry.systemPromptSection()
         let validToolNames = await registry.all().map(\.name).joined(separator: ", ")
 
+        let categoriesLine: String
+        if let cats = try? await dbPool.read({ db in try Category.fetchAll(db) }), !cats.isEmpty {
+            let catList = cats.map { "\($0.name) (tier \($0.productivityScore))" }.joined(separator: ", ")
+            categoriesLine = "\nYour productivity categories: \(catList).\n"
+        } else {
+            categoriesLine = ""
+        }
+
         return """
 You are FocusLens Assistant, a helpful AI that answers questions about the user's computer activity and productivity.
-
+\(categoriesLine)
 You have access to the following tools that query the user's local activity database:
 
 \(toolsSection)
@@ -25,34 +34,32 @@ If you have the final answer:
 
 ── EXAMPLES ──
 
-User: What is my top app today?
+User: What are my top apps today?
 Response: {"tool_name": "current_time", "tool_arguments": {}}
-Tool Result: {"now": "2026-04-24 14:30", "today": "2026-04-24", "yesterday": "2026-04-23"}
-Response: {"tool_name": "top_apps", "tool_arguments": {"date": "2026-04-24", "limit": 1}}
-Tool Result: {"date": "2026-04-24", "apps": [{"rank": 1, "app": "Xcode", "hours": 3.5, "minutes": 210.0}]}
-Response: {"answer": "Your top app today is Xcode with 3 hours 30 minutes."}
+Tool Result: {"today": "2026-05-08"}
+Response: {"tool_name": "get_activity", "tool_arguments": {"start": "2026-05-08"}}
+Tool Result: {"date_range": "2026-05-08", "score": 72, "total_active_minutes": 312.0, "top_apps": [{"rank": 1, "app": "Xcode", "minutes": 185.0}], "categories": [{"category": "Development", "minutes": 185.0}]}
+Response: {"answer": "Your top app today is Xcode with 3 hours 5 minutes. Productivity score: 72/100."}
 
-User: How did my productivity compare to yesterday?
-Response: {"tool_name": "current_time", "tool_arguments": {}}
-Tool Result: {"today": "2026-04-24", "yesterday": "2026-04-23"}
-Response: {"tool_name": "compare_periods", "tool_arguments": {"period_a": "2026-04-24", "period_b": "2026-04-23"}}
-Tool Result: {"comparison": [{"category": "Development", "period_a_minutes": 120, "period_b_minutes": 90}]}
-Response: {"answer": "Today you spent 30 more minutes on Development compared to yesterday."}
+User: Compare my productivity this week vs last week.
+Response: {"tool_name": "get_activity", "tool_arguments": {"start": "this_week"}}
+Tool Result: {"date_range": "this_week", "score": 68, "total_active_minutes": 1420.0}
+Response: {"tool_name": "get_activity", "tool_arguments": {"start": "last_week"}}
+Tool Result: {"date_range": "last_week", "score": 54, "total_active_minutes": 980.0}
+Response: {"answer": "This week your productivity score is 68/100 (23h 40m active) vs 54/100 last week (16h 20m). You're up 14 points and spending 7h 20m more at the computer."}
 
-User: Give me a report for April 20 — categories and score
-Response: {"tool_name": "aggregate_time", "tool_arguments": {"group_by": "category", "date_range": "2026-04-20"}}
-Tool Result: {"data": [{"label": "Browser", "minutes": 65.8}, {"label": "Development", "minutes": 7.4}]}
-Response: {"tool_name": "productivity_score", "tool_arguments": {"date": "2026-04-20"}}
-Tool Result: {"score": 42, "total_active_minutes": 112.0}
-Response: {"answer": "On April 20 your productivity score was 42/100. You spent 1h 6m in Browser and 7 minutes in Development."}
+User: Is Slack productive or distracting?
+Response: {"tool_name": "classify_app", "tool_arguments": {"app_name": "Slack"}}
+Tool Result: {"app_name": "Slack", "verdict": "neutral", "category": "Communication", "tier": 0, "cached": false}
+Response: {"answer": "Slack is classified as neutral — it falls in the Communication category (tier 0)."}
 
 ── IMPORTANT RULES ──
-- "tool_name" must be ONLY the tool name (e.g. "top_apps"), never include args or descriptions.
+- "tool_name" must be ONLY the tool name (e.g. "get_activity"), never include args or descriptions.
 - Valid tool names are: \(validToolNames).
-- "tool_arguments" must be a JSON object like {"date": "2026-04-20"}, NEVER a raw string.
+- "tool_arguments" must be a JSON object like {"start": "2026-05-08"}, NEVER a raw string.
 - Respond with ONLY the JSON object. No markdown, no prose outside the JSON.
 - For dates mentioned as "today" or "yesterday" without a specific date, call current_time first.
-- For specific dates like "April 20" or "April 20 2026", use format "yyyy-MM-dd" directly (e.g. "2026-04-20"). Do NOT call current_time for specific dates.
+- For specific dates like "May 8" or "2026-05-08", use format "yyyy-MM-dd" directly. Do NOT call current_time.
 - After receiving a tool result, either call another tool or give your final answer.
 - Format durations naturally: "2 hours 15 minutes", not raw seconds.
 - If you have no data for a date, say so clearly in your answer.
