@@ -80,6 +80,29 @@ struct ActivitySessionStore: Sendable {
         return try fetchCategoryBreakdown(startISO: s, endISO: e)
     }
 
+    func fetchHourlyCategoryBreakdown(for date: Date) throws -> [(hour: Int, colorHex: String, seconds: Double)] {
+        let (start, end) = dayBoundsISO(for: date)
+        return try dbPool.read { db in
+            let rows = try Row.fetchAll(
+                db,
+                sql: """
+                    SELECT
+                        CAST(strftime('%H', a.started_at, 'localtime') AS INTEGER) as hour,
+                        COALESCE(c.color_hex, '9E9E9E') as color_hex,
+                        COALESCE(SUM(a.duration_seconds), 0) as total
+                    FROM activity_sessions a
+                    LEFT JOIN categories c ON a.category_id = c.id
+                    WHERE a.started_at >= ? AND a.started_at < ?
+                      AND a.is_idle = 0 AND a.ended_at IS NOT NULL
+                    GROUP BY hour, a.category_id
+                    ORDER BY hour, total DESC
+                    """,
+                arguments: [start, end]
+            )
+            return rows.map { (hour: $0["hour"], colorHex: $0["color_hex"], seconds: $0["total"]) }
+        }
+    }
+
     func fetchHourlyTierBreakdown(for date: Date) throws -> [(hour: Int, tier: Int, seconds: Double)] {
         let (start, end) = dayBoundsISO(for: date)
         return try dbPool.read { db in
@@ -134,6 +157,34 @@ struct ActivitySessionStore: Sendable {
                 arguments: [start, end, limit]
             )
             return rows.map { (windowTitle: $0["window_title"], appName: $0["app_name"], appBundleId: $0["app_bundle_id"], totalSeconds: $0["total"], tier: $0["tier"]) }
+        }
+    }
+
+    func fetchDailyActiveSeconds(start: Date, end: Date) throws -> [(date: Date, seconds: Double)] {
+        let (s, e) = rangeBoundsISO(start: start, end: end)
+        return try dbPool.read { db in
+            let rows = try Row.fetchAll(
+                db,
+                sql: """
+                    SELECT
+                        DATE(started_at, 'localtime') as day,
+                        COALESCE(SUM(duration_seconds), 0) as total
+                    FROM activity_sessions
+                    WHERE started_at >= ? AND started_at < ?
+                      AND is_idle = 0 AND ended_at IS NOT NULL
+                    GROUP BY day
+                    ORDER BY day
+                    """,
+                arguments: [s, e]
+            )
+            let fmt = DateFormatter()
+            fmt.dateFormat = "yyyy-MM-dd"
+            fmt.timeZone = Calendar.current.timeZone
+            return rows.compactMap { row -> (date: Date, seconds: Double)? in
+                guard let dayStr: String = row["day"],
+                      let date = fmt.date(from: dayStr) else { return nil }
+                return (date: date, seconds: row["total"])
+            }
         }
     }
 

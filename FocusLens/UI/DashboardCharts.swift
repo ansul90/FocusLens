@@ -198,6 +198,133 @@ struct HourlyTierChart: View {
     }
 }
 
+// MARK: - HourlyColorMode + HourlyCategoryChart
+
+enum HourlyColorMode: String, CaseIterable, Identifiable {
+    case tier     = "Productivity"
+    case category = "Category"
+    var id: String { rawValue }
+}
+
+struct HourlyCategoryChart: View {
+    let hourlyCategoryBreakdown: [(hour: Int, colorHex: String, seconds: Double)]
+
+    private static let xAxisStride = stride(from: 0, through: 23, by: 4).map { $0 }
+
+    var body: some View {
+        if hourlyCategoryBreakdown.isEmpty {
+            Text("No activity recorded yet")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            Chart(Array(hourlyCategoryBreakdown.enumerated()), id: \.offset) { item in
+                BarMark(
+                    x: .value("Hour", item.element.hour),
+                    y: .value("Minutes", item.element.seconds / 60)
+                )
+                .foregroundStyle(Color(hex: item.element.colorHex) ?? .gray)
+            }
+            .chartXAxis {
+                AxisMarks(values: Self.xAxisStride) { value in
+                    AxisValueLabel {
+                        if let hour = value.as(Int.self) {
+                            Text("\(hour)")
+                        }
+                    }
+                    AxisGridLine()
+                }
+            }
+            .chartYAxis {
+                AxisMarks { value in
+                    AxisValueLabel {
+                        if let minutes = value.as(Double.self) {
+                            Text("\(Int(minutes))m")
+                        }
+                    }
+                    AxisGridLine()
+                }
+            }
+        }
+    }
+}
+
+// MARK: - WeekOverviewBars
+
+struct WeekOverviewBars: View {
+    let weekDailySeconds: [(date: Date, seconds: Double)]
+    let selectedDate: Date
+
+    private static let dayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "EEE"
+        return f
+    }()
+
+    // All 7 days of the week containing selectedDate, filled with 0 for missing days.
+    private var days: [(date: Date, seconds: Double)] {
+        let cal = Calendar.current
+        guard let weekInterval = cal.dateInterval(of: .weekOfYear, for: selectedDate) else { return [] }
+        let byDay = Dictionary(weekDailySeconds.map {
+            (cal.startOfDay(for: $0.date), $0.seconds)
+        }, uniquingKeysWith: { first, _ in first })
+
+        var result: [(date: Date, seconds: Double)] = []
+        var cursor = cal.startOfDay(for: weekInterval.start)
+        let weekEnd = cal.startOfDay(for: weekInterval.end)
+        while cursor < weekEnd {
+            result.append((date: cursor, seconds: byDay[cursor] ?? 0))
+            cursor = cal.date(byAdding: .day, value: 1, to: cursor)!
+        }
+        return result
+    }
+
+    // Average over days that have elapsed (don't count future days or days with no data).
+    private var avgHours: Double {
+        let now = Calendar.current.startOfDay(for: Date())
+        let elapsed = days.filter { $0.date <= now && $0.seconds > 0 }
+        guard !elapsed.isEmpty else { return 0 }
+        return elapsed.reduce(0) { $0 + $1.seconds } / Double(elapsed.count) / 3600
+    }
+
+    var body: some View {
+        Chart {
+            ForEach(days, id: \.date) { entry in
+                BarMark(
+                    x: .value("Day", entry.date, unit: .day),
+                    y: .value("Hours", entry.seconds / 3600)
+                )
+                .foregroundStyle(
+                    Calendar.current.isDate(entry.date, inSameDayAs: selectedDate)
+                        ? Color.accentColor
+                        : Color.secondary.opacity(0.35)
+                )
+            }
+            if avgHours > 0 {
+                RuleMark(y: .value("Avg", avgHours))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    .foregroundStyle(Color.secondary.opacity(0.6))
+            }
+        }
+        .chartXAxis {
+            AxisMarks(values: .stride(by: .day)) { value in
+                AxisValueLabel(centered: true) {
+                    if let date = value.as(Date.self) {
+                        Text(Self.dayFormatter.string(from: date))
+                            .font(.caption2)
+                            .foregroundStyle(
+                                Calendar.current.isDate(date, inSameDayAs: selectedDate)
+                                    ? Color.primary
+                                    : Color.secondary
+                            )
+                    }
+                }
+            }
+        }
+        .chartYAxis(.hidden)
+    }
+}
+
 extension Color {
     init?(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

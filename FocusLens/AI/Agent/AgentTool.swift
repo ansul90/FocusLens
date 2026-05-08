@@ -49,9 +49,11 @@ actor ToolRegistry {
         tools.values.sorted { $0.name < $1.name }
     }
 
-    /// Generates the tools section of the system prompt.
-    func systemPromptSection() -> String {
-        let sorted = tools.values.sorted { $0.name < $1.name }
+    /// Generates the tools section of the system prompt, optionally excluding named tools.
+    func systemPromptSection(excluding hidden: Set<String> = []) -> String {
+        let sorted = tools.values
+            .filter { !hidden.contains($0.name) }
+            .sorted { $0.name < $1.name }
         let descriptions = sorted.enumerated().map { idx, tool in
             """
             \(idx + 1). \(tool.name)

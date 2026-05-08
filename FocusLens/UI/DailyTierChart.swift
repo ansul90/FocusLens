@@ -4,7 +4,7 @@ import Charts
 struct DailyTierChart: View {
     let dailyTierBreakdown: [(date: Date, tier: Int, seconds: Double)]
     let range: DateInterval
-    let kind: RangeKind
+    let kind: ActivityScope
 
     private static let dayFormatter: DateFormatter = {
         let f = DateFormatter()

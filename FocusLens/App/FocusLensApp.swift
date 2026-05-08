@@ -3,8 +3,7 @@ import os
 
 @main
 struct FocusLensApp: App {
-    @State private var aggregate = TodayAggregate()
-    @State private var rangeAggregate = RangeAggregate()
+    @State private var aggregate = ActivityAggregate()
     private let tracker = ActivityTracker()
     private let categorizationEngine = CategorizationEngine()
     private let browserClassifier = BrowserClassifier()
@@ -22,7 +21,6 @@ struct FocusLensApp: App {
         // _aggregate and _askViewModel use State's wrappedValue which is safe to
         // access in App.init() because App-level @State is initialized exactly once.
         let agg = _aggregate.wrappedValue
-        let rangeAgg = _rangeAggregate.wrappedValue
         let vm = _askViewModel.wrappedValue
         let catEngine = categorizationEngine
         let t = tracker
@@ -34,7 +32,6 @@ struct FocusLensApp: App {
                     Task.detached {
                         try? catEngine.batchCategorize()
                         await agg.refreshStats()
-                        await rangeAgg.refreshStats()
                     }
                 },
                 onStateChanged: { name, paused in
@@ -49,7 +46,6 @@ struct FocusLensApp: App {
             Task.detached {
                 try? catEngine.batchCategorize()
                 await agg.refreshStats()
-                await rangeAgg.refreshStats()
             }
             Task { await vm.startMCP() }
         }
@@ -86,7 +82,6 @@ struct FocusLensApp: App {
         }
         .defaultSize(width: 760, height: 540)
         .environment(aggregate)
-        .environment(rangeAggregate)
         .environment(askViewModel)
     }
 }

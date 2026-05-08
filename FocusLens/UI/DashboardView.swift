@@ -1,35 +1,35 @@
 import SwiftUI
 
 struct DashboardView: View {
-    @Environment(TodayAggregate.self) private var aggregate
-    @Environment(RangeAggregate.self) private var rangeAggregate
+    @Environment(ActivityAggregate.self) private var aggregate
     @Environment(AskViewModel.self) private var askViewModel
 
-    private static let dateFormatter: DateFormatter = {
+    private static let shortDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "EEEE, MMMM d"
+        f.dateFormat = "MMM d"
         return f
     }()
 
-    @State private var selectedNav: NavDestination? = .stats
+    private static let monthYearFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM yyyy"
+        return f
+    }()
+
+    @State private var selectedNav: NavDestination? = .activity
+    @State private var hourlyColorMode: HourlyColorMode = .tier
 
     private enum NavDestination: String, Hashable {
-        case stats, trends, ask
+        case activity, ask
         case settingsGeneral, settingsCategories, settingsNeverTrack, settingsAI
-    }
-
-    private var isToday: Bool {
-        Calendar.current.isDateInToday(aggregate.selectedDate)
     }
 
     var body: some View {
         NavigationSplitView {
             List(selection: $selectedNav) {
                 Section("Overview") {
-                    Label("Today", systemImage: "chart.bar.fill")
-                        .tag(NavDestination.stats)
-                    Label("Trends", systemImage: "chart.line.uptrend.xyaxis")
-                        .tag(NavDestination.trends)
+                    Label("Activity", systemImage: "chart.bar.fill")
+                        .tag(NavDestination.activity)
                     Label("Ask FocusLens", systemImage: "bubble.left.and.bubble.right.fill")
                         .tag(NavDestination.ask)
                 }
@@ -46,12 +46,9 @@ struct DashboardView: View {
             }
             .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 200)
         } detail: {
-            switch selectedNav ?? .stats {
-            case .stats:
-                statsContent
-            case .trends:
-                TrendsView()
-                    .environment(rangeAggregate)
+            switch selectedNav ?? .activity {
+            case .activity:
+                activityContent
             case .ask:
                 AskFocusLensView(viewModel: askViewModel)
             case .settingsGeneral:
@@ -67,12 +64,12 @@ struct DashboardView: View {
         .frame(minWidth: 720, minHeight: 520)
     }
 
-    // MARK: - Stats content
+    // MARK: - Activity Content
 
-    private var statsContent: some View {
+    private var activityContent: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                dateHeader
+                activityHeader
                     .padding(.bottom, 16)
 
                 heroRow
@@ -95,9 +92,30 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Date Header
+    // MARK: - Header (scope picker + navigation)
 
-    private var dateHeader: some View {
+    private var activityHeader: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Picker("", selection: Binding(
+                get: { aggregate.scope },
+                set: { scope in Task { await aggregate.selectScope(scope) } }
+            )) {
+                ForEach(ActivityScope.allCases) { scope in
+                    Text(scope.rawValue).tag(scope)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 220)
+
+            if aggregate.scope == .today {
+                todayNavRow
+            } else {
+                rangeNavRow
+            }
+        }
+    }
+
+    private var todayNavRow: some View {
         HStack(spacing: 8) {
             Button {
                 Task { await aggregate.selectDate(
@@ -128,11 +146,11 @@ struct DashboardView: View {
                 Image(systemName: "chevron.right")
             }
             .buttonStyle(.plain)
-            .disabled(isToday)
+            .disabled(aggregate.isCurrentPeriod)
 
             Spacer()
 
-            if !isToday {
+            if !aggregate.isCurrentPeriod {
                 Button("Today") {
                     Task { await aggregate.selectDate(Date()) }
                 }
@@ -143,14 +161,54 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Hero Row: time logged + productivity gauge
+    private var rangeNavRow: some View {
+        HStack(spacing: 8) {
+            Button {
+                Task { await aggregate.previousPeriod() }
+            } label: {
+                Image(systemName: "chevron.left")
+            }
+            .buttonStyle(.plain)
+
+            Text(periodLabel)
+                .font(.callout)
+                .monospacedDigit()
+                .frame(minWidth: 140, alignment: .center)
+
+            Button {
+                Task { await aggregate.nextPeriod() }
+            } label: {
+                Image(systemName: "chevron.right")
+            }
+            .buttonStyle(.plain)
+            .disabled(aggregate.isCurrentPeriod)
+
+            Spacer()
+
+            if !aggregate.isCurrentPeriod {
+                Button(aggregate.scope == .week ? "This week" : "This month") {
+                    Task { await aggregate.jumpToCurrent() }
+                }
+                .buttonStyle(.plain)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            } else {
+                Text(aggregate.scope == .week ? "This week" : "This month")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    // MARK: - Hero Row
 
     private var heroRow: some View {
         HStack(alignment: .top, spacing: 24) {
             HeroTimeView(
                 totalSeconds: aggregate.totalActiveSeconds,
-                previousSeconds: aggregate.previousDayActiveSeconds,
-                hasComparison: aggregate.previousDayHasData
+                previousSeconds: aggregate.previousActiveSeconds,
+                hasComparison: aggregate.previousHasData,
+                comparisonLabel: heroComparisonLabel
             )
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -160,18 +218,19 @@ struct DashboardView: View {
                 DeltaCaption(
                     delta: Double(aggregate.productivityScoreDelta),
                     unit: .points,
-                    hasComparison: aggregate.previousDayHasData
+                    hasComparison: aggregate.previousHasData,
+                    comparisonLabel: heroComparisonLabel
                 )
             }
             .frame(width: 160)
         }
     }
 
-    // MARK: - Mid Row: timeline + categories
+    // MARK: - Mid Row: chart + categories
 
     private var midRow: some View {
         HStack(alignment: .top, spacing: 20) {
-            timelineColumn
+            chartColumn
                 .frame(maxWidth: .infinity)
 
             Divider()
@@ -181,14 +240,52 @@ struct DashboardView: View {
         }
     }
 
-    private var timelineColumn: some View {
+    private var chartColumn: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("TIMELINE")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack {
+                Text(aggregate.scope == .today ? "TIMELINE" : "DAILY ACTIVITY")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if aggregate.scope != .today && aggregate.isCurrentPeriod {
+                    Text("· in progress")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                Spacer()
+                if aggregate.scope == .today {
+                    Picker("", selection: $hourlyColorMode) {
+                        ForEach(HourlyColorMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 170)
+                }
+            }
 
-            HourlyTierChart(hourlyTierBreakdown: aggregate.hourlyTierBreakdown)
-                .frame(height: 90)
+            if aggregate.scope == .today {
+                WeekOverviewBars(
+                    weekDailySeconds: aggregate.weekDailySeconds,
+                    selectedDate: aggregate.selectedDate
+                )
+                .frame(height: 52)
+                .padding(.bottom, 8)
+
+                if hourlyColorMode == .tier {
+                    HourlyTierChart(hourlyTierBreakdown: aggregate.hourlyTierBreakdown)
+                        .frame(height: 90)
+                } else {
+                    HourlyCategoryChart(hourlyCategoryBreakdown: aggregate.hourlyCategoryBreakdown)
+                        .frame(height: 90)
+                }
+            } else {
+                DailyTierChart(
+                    dailyTierBreakdown: aggregate.dailyTierBreakdown,
+                    range: aggregate.range,
+                    kind: aggregate.scope
+                )
+                .frame(height: 120)
+            }
 
             ProductivityBreakdownBar(breakdown: aggregate.productivityTierBreakdown)
                 .frame(height: 8)
@@ -203,9 +300,7 @@ struct DashboardView: View {
             aggregate.productivityTierBreakdown.map { ($0.tier, $0.seconds) },
             uniquingKeysWith: { first, _ in first }
         )
-        let activeTiers = TierColors.ordered.filter { tier in
-            (tierSeconds[tier] ?? 0) > 0
-        }
+        let activeTiers = TierColors.ordered.filter { (tierSeconds[$0] ?? 0) > 0 }
 
         return HStack(spacing: 12) {
             ForEach(activeTiers, id: \.self) { tier in
@@ -244,19 +339,9 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Bottom Row: top apps | top interruptors | top window titles
+    // MARK: - Bottom Row: unified app list
 
     private var bottomRow: some View {
-        HStack(alignment: .top, spacing: 0) {
-            topAppsColumn
-            Divider().padding(.horizontal, 12)
-            topInterruptorsColumn
-            Divider().padding(.horizontal, 12)
-            topWindowTitlesColumn
-        }
-    }
-
-    private var topAppsColumn: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("TOP APPS")
                 .font(.caption)
@@ -267,35 +352,14 @@ struct DashboardView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(aggregate.topApps.prefix(5), id: \.appName) { app in
-                    AppListRow(
+                ForEach(aggregate.topApps, id: \.appBundleId) { app in
+                    ExpandableAppRow(
                         appName: app.appName,
-                        seconds: app.totalSeconds,
-                        totalSeconds: aggregate.totalActiveSeconds
-                    )
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var topInterruptorsColumn: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("TOP INTERRUPTORS")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            if aggregate.topInterruptors.isEmpty {
-                Text("No distractions logged")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(aggregate.topInterruptors, id: \.appName) { app in
-                    AppListRow(
-                        appName: app.appName,
+                        appBundleId: app.appBundleId,
                         seconds: app.totalSeconds,
                         totalSeconds: aggregate.totalActiveSeconds,
-                        tierTint: TierColors.color(for: app.tier)
+                        tierTint: interruptorTier(for: app.appBundleId),
+                        windowTitles: windows(for: app.appBundleId)
                     )
                 }
             }
@@ -303,27 +367,38 @@ struct DashboardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var topWindowTitlesColumn: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("TOP WINDOWS")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+    private func interruptorTier(for bundleId: String) -> Color? {
+        aggregate.topInterruptors.first { $0.appBundleId == bundleId }
+            .map { TierColors.color(for: $0.tier) }
+    }
 
-            if aggregate.topWindowTitles.isEmpty {
-                Text("No window data available")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(aggregate.topWindowTitles, id: \.windowTitle) { entry in
-                    WindowTitlePillRow(
-                        title: entry.windowTitle,
-                        appName: entry.appName,
-                        seconds: entry.totalSeconds,
-                        tier: entry.tier
-                    )
-                }
-            }
+    private func windows(for bundleId: String) -> [(windowTitle: String, totalSeconds: Double, tier: Int)] {
+        aggregate.topWindowTitles
+            .filter { $0.appBundleId == bundleId }
+            .map { (windowTitle: $0.windowTitle, totalSeconds: $0.totalSeconds, tier: $0.tier) }
+    }
+
+    // MARK: - Helpers
+
+    private var heroComparisonLabel: String {
+        switch aggregate.scope {
+        case .today:  return "vs yesterday"
+        case .week:   return "vs last week"
+        case .month:  return "vs last month"
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var periodLabel: String {
+        switch aggregate.scope {
+        case .today:
+            return ""
+        case .week:
+            let start = Self.shortDateFormatter.string(from: aggregate.range.start)
+            let lastDay = Calendar.current.date(byAdding: .day, value: -1, to: aggregate.range.end)!
+            let end = Self.shortDateFormatter.string(from: lastDay)
+            return "\(start) – \(end)"
+        case .month:
+            return Self.monthYearFormatter.string(from: aggregate.range.start)
+        }
     }
 }

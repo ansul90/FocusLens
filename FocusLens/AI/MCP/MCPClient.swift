@@ -53,6 +53,20 @@ actor MCPClient {
         let serverDir = URL(fileURLWithPath: AppConstants.MCP.serverDirectory)
         let serverScript = AppConstants.MCP.serverScript
 
+        // Pre-flight: give actionable errors before Process.run() produces a cryptic one.
+        guard FileManager.default.fileExists(atPath: serverDir.path) else {
+            throw MCPError.processLaunchFailed(
+                "Server directory not found: \(serverDir.path). " +
+                "Set the focuslens-mcp path in Settings → AI → MCP."
+            )
+        }
+        guard FileManager.default.fileExists(atPath: uvPath) else {
+            throw MCPError.processLaunchFailed(
+                "uv not found at \(uvPath). " +
+                "Install uv (https://docs.astral.sh/uv/) or update the path in Settings → AI → MCP."
+            )
+        }
+
         let p = Process()
         p.executableURL = URL(fileURLWithPath: uvPath)
         p.arguments = ["run", "python", serverScript]

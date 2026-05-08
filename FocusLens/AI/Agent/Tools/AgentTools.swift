@@ -69,11 +69,15 @@ struct GetActivityTool: AgentTool {
         do {
             let (appRows, catRows, tierRows) = try await dbPool.read { db -> ([Row], [Row], [Row]) in
                 let apps = try Row.fetchAll(db, sql: """
-                    SELECT app_name, COALESCE(SUM(duration_seconds), 0) as total
-                    FROM activity_sessions
-                    WHERE started_at >= ? AND started_at < ?
-                      AND is_idle = 0 AND ended_at IS NOT NULL
-                    GROUP BY app_bundle_id, app_name ORDER BY total DESC LIMIT 10
+                    SELECT a.app_name,
+                           COALESCE(SUM(a.duration_seconds), 0) as total,
+                           COALESCE(c.is_productive, 0) as tier,
+                           COALESCE(c.name, 'Uncategorized') as category
+                    FROM activity_sessions a
+                    LEFT JOIN categories c ON a.category_id = c.id
+                    WHERE a.started_at >= ? AND a.started_at < ?
+                      AND a.is_idle = 0 AND a.ended_at IS NOT NULL
+                    GROUP BY a.app_bundle_id, a.app_name ORDER BY total DESC LIMIT 10
                     """, arguments: [range.start, range.end])
 
                 let cats = try Row.fetchAll(db, sql: """
@@ -111,7 +115,10 @@ struct GetActivityTool: AgentTool {
                 ? max(0, min(100, Int(((weightedSum / totalSecs) + 2.0) / 4.0 * 100)))
                 : 50
 
-            struct AppEntry: Encodable { let rank: Int; let app: String; let minutes: Double }
+            struct AppEntry: Encodable {
+                let rank: Int; let app: String; let minutes: Double
+                let tier: Int; let category: String
+            }
             struct CatEntry: Encodable { let category: String; let minutes: Double }
             struct Out: Encodable {
                 let date_range: String
@@ -122,8 +129,14 @@ struct GetActivityTool: AgentTool {
             }
 
             let apps = appRows.enumerated().map { idx, row in
-                AppEntry(rank: idx + 1, app: row["app_name"] ?? "?",
-                         minutes: ((row["total"] as? Double ?? 0) / 60).rounded(digits: 1))
+                let tier = (row["tier"] as? Int) ?? (row["tier"] as? Int64).map(Int.init) ?? 0
+                return AppEntry(
+                    rank: idx + 1,
+                    app: row["app_name"] ?? "?",
+                    minutes: ((row["total"] as? Double ?? 0) / 60).rounded(digits: 1),
+                    tier: tier,
+                    category: row["category"] ?? "Uncategorized"
+                )
             }
             let cats = catRows.map { row in
                 CatEntry(category: row["label"] ?? "?",
@@ -160,6 +173,11 @@ struct QuerySessionsTool: AgentTool {
     func run(args: [String: Any]) async -> String {
         guard let rawDate = args["date"] as? String else {
             return toolError("Missing required argument: date")
+        }
+
+        let lower = rawDate.lowercased().trimmingCharacters(in: .whitespaces)
+        if lower == "this_week" || lower == "last_week" {
+            return toolError("query_sessions only accepts single dates (e.g. today, yesterday, 2026-05-08). Use get_activity for week ranges.")
         }
 
         let date = resolveDate(rawDate)

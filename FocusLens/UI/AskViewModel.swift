@@ -10,12 +10,14 @@ struct ConversationEntry: Identifiable, Sendable {
     let sender: Sender
     let text: String
     let trace: [TraceStep]
+    var reportURL: URL?
 
-    init(sender: Sender, text: String, trace: [TraceStep] = []) {
+    init(sender: Sender, text: String, trace: [TraceStep] = [], reportURL: URL? = nil) {
         self.id = UUID()
         self.sender = sender
         self.text = text
         self.trace = trace
+        self.reportURL = reportURL
     }
 }
 
@@ -97,6 +99,12 @@ final class AskViewModel {
         do {
             let result = try await runner.ask(query, priorContext: priorContext)
             entries.append(ConversationEntry(sender: .agent, text: result.answer, trace: result.trace))
+            // Post-answer: Swift builds the render_report payload from trace data and calls MCP.
+            // The LLM never sees render_report — this makes the MCP call reliable.
+            let entryIdx = entries.count - 1
+            if let reportURL = await tryRenderReport(from: result.trace, query: query) {
+                entries[entryIdx].reportURL = reportURL
+            }
 
             // Append this exchange to rolling history. Use a compact summary of the tool result
             // (not the full JSON) so the context stays small enough for the local model to handle.
@@ -140,6 +148,107 @@ final class AskViewModel {
     func clear() {
         entries.removeAll()
         conversationHistory.removeAll()
+    }
+
+    // MARK: - MCP report rendering
+
+    /// Builds a render_report call from the agent's trace data and calls it via MCP.
+    /// Only triggers when the trace includes a get_activity result.
+    /// Returns nil silently if MCP is not running or the tool call fails.
+    private func tryRenderReport(from trace: [TraceStep], query: String) async -> URL? {
+        guard await MCPClient.shared.isRunning else { return nil }
+
+        guard let activityStep = trace.reversed().first(where: {
+            if case .toolCall(let name, _, _) = $0.kind { return name == "get_activity" }
+            return false
+        }), case .toolCall(_, _, let resultJSON) = activityStep.kind else { return nil }
+
+        guard let sections = buildReportSections(from: resultJSON, query: query),
+              !sections.isEmpty else { return nil }
+
+        do {
+            let result = try await MCPClient.shared.callTool(
+                name: "render_report",
+                arguments: ["title": "FocusLens Report", "sections": sections]
+            )
+            if let urlStr = (try? JSONSerialization.jsonObject(with: Data(result.utf8)))
+                .flatMap({ $0 as? [String: Any] })?["url"] as? String,
+               let url = URL(string: urlStr) {
+                logger.info("MCP render_report: \(url.absoluteString)")
+                return url
+            }
+        } catch {
+            logger.warning("render_report MCP call failed: \(error.localizedDescription)")
+        }
+        return nil
+    }
+
+    private func buildReportSections(from activityJSON: String, query: String) -> [[String: Any]]? {
+        guard let data = activityJSON.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+
+        let score = json["score"] as? Int ?? 0
+        let totalMins = json["total_active_minutes"] as? Double ?? 0
+        let dateRange = json["date_range"] as? String ?? "this period"
+        let topApps = json["top_apps"] as? [[String: Any]] ?? []
+
+        guard !topApps.isEmpty else { return nil }
+
+        var sections: [[String: Any]] = []
+
+        // KPI row
+        let h = Int(totalMins / 60), m = Int(totalMins.truncatingRemainder(dividingBy: 60))
+        let durStr = h > 0 ? "\(h)h \(m)m" : "\(m)m"
+        let scoreTrend = score >= 60 ? "up" : score >= 40 ? "neutral" : "down"
+        let scoreSentiment = score >= 60 ? "positive" : score >= 40 ? "neutral" : "negative"
+        sections.append([
+            "type": "kpi", "label": "Productivity Score",
+            "value": "\(score)/100", "description": dateRange,
+            "trend": scoreTrend, "trend_sentiment": scoreSentiment
+        ])
+        sections.append(["type": "kpi", "label": "Active Time", "value": durStr])
+
+        // Bar chart: use hours when any app exceeds 60 min for readable axis values
+        let appMins = topApps.prefix(10).compactMap { $0["minutes"] as? Double }
+        let useHours = appMins.max().map { $0 > 60 } ?? false
+        let chartTitle = useHours ? "Top Apps by Time (hours)" : "Top Apps by Time (min)"
+        let chartData: [[String: Any]] = topApps.prefix(10).compactMap { app in
+            guard let name = app["app"] as? String,
+                  let mins = app["minutes"] as? Double else { return nil }
+            let value = useHours ? ((mins / 60 * 10).rounded() / 10) : mins
+            var item: [String: Any] = ["label": name, "value": value]
+            if let tier = app["tier"] as? Int { item["tier"] = tier }
+            return item
+        }
+        if !chartData.isEmpty {
+            sections.append(["type": "bar_chart", "title": chartTitle, "data": chartData])
+        }
+
+        // Table with category and tier
+        let headers = ["App", "Category", "Time", "Tier"]
+        let rows: [[String]] = topApps.prefix(10).compactMap { app in
+            guard let name = app["app"] as? String else { return nil }
+            return [
+                name,
+                app["category"] as? String ?? "?",
+                formatMinutes(app["minutes"] as? Double ?? 0),
+                String(app["tier"] as? Int ?? 0)
+            ]
+        }
+        if !rows.isEmpty {
+            sections.append(["type": "table", "title": "App Details", "headers": headers, "rows": rows])
+        }
+
+        return sections
+    }
+
+    private func formatMinutes(_ mins: Double) -> String {
+        guard mins >= 60 else { return "\(Int(mins))m" }
+        let h = Int(mins / 60)
+        let m = Int(mins.truncatingRemainder(dividingBy: 60))
+        return m > 0 ? "\(h)h \(m)m" : "\(h)h"
     }
 
     // MARK: - History compression

@@ -54,16 +54,22 @@ enum AppConstants {
     }
 
     enum MCP {
-        static let uvPath: String = "\(NSHomeDirectory())/.local/bin/uv"
-        static let serverDirectory: String = {
+        static let defaultUvPath: String = "\(NSHomeDirectory())/.local/bin/uv"
+        static let defaultServerDirectory: String = {
             let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            // During development, override via UserDefaults key "mcp.serverDirectory"
-            if let override = UserDefaults.standard.string(forKey: "mcp.serverDirectory") {
-                return override
-            }
             return appSupport.appendingPathComponent("FocusLens/mcp").path
         }()
         static let serverScript: String = "server.py"
         static let userDefaultsKeyServerDirectory: String = "mcp.serverDirectory"
+        static let userDefaultsKeyUvPath: String = "mcp.uvPath"
+
+        static var uvPath: String {
+            UserDefaults.standard.string(forKey: userDefaultsKeyUvPath)
+                .flatMap { $0.isEmpty ? nil : $0 } ?? defaultUvPath
+        }
+        static var serverDirectory: String {
+            UserDefaults.standard.string(forKey: userDefaultsKeyServerDirectory)
+                .flatMap { $0.isEmpty ? nil : $0 } ?? defaultServerDirectory
+        }
     }
 }

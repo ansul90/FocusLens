@@ -158,6 +158,18 @@ private struct MessageBubble: View {
                 if entry.sender == .agent { Spacer(minLength: 40) }
             }
 
+            if let reportURL = entry.reportURL {
+                Link(destination: reportURL) {
+                    Label("View Report", systemImage: "chart.bar.xaxis")
+                        .font(.caption)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
+            }
+
             if entry.sender == .agent && !entry.trace.isEmpty {
                 Button {
                     withAnimation(.easeInOut(duration: 0.15)) { showTrace.toggle() }

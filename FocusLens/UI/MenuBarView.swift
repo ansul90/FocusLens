@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MenuBarView: View {
-    let aggregate: TodayAggregate
+    let aggregate: ActivityAggregate
     let tracker: ActivityTracker
 
     @Environment(\.openWindow) private var openWindow

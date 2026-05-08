@@ -30,7 +30,8 @@ enum ResponseParser {
             throw AgentError.unparseable(cleaned)
         }
 
-        if let answer = dict["answer"] as? String {
+        if let raw = dict["answer"] as? String {
+            let answer = truncateAnswer(raw)
             return ParsedResponse(answer: answer, toolName: nil, rawArgs: dict)
         }
 
@@ -64,6 +65,20 @@ enum ResponseParser {
     }
 
     // MARK: - Private
+
+    /// Caps answer length and detects token-repetition loops (local models occasionally
+    /// repeat the same word/phrase hundreds of times before generating a stop token).
+    private static func truncateAnswer(_ text: String) -> String {
+        let maxChars = 800
+        guard text.count > maxChars else { return text }
+
+        // Hard cap — take the first complete sentence within the limit if possible.
+        let prefix = String(text.prefix(maxChars))
+        if let lastSentence = prefix.range(of: #"[.!?][^.!?]*$"#, options: .regularExpression) {
+            return String(prefix[..<lastSentence.lowerBound]) + "."
+        }
+        return prefix + "…"
+    }
 
     private static func stripMarkdownFences(_ text: String) -> String {
         var t = text.trimmingCharacters(in: .whitespacesAndNewlines)

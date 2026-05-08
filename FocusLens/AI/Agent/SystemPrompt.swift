@@ -3,9 +3,14 @@ import GRDB
 
 enum SystemPrompt {
 
+    // Tools the LLM must never invoke directly (complex schema, UI-only use).
+    private static let hiddenFromLLM: Set<String> = ["render_report"]
+
     static func build(registry: ToolRegistry, dbPool: DatabasePool) async -> String {
-        let toolsSection = await registry.systemPromptSection()
-        let validToolNames = await registry.all().map(\.name).joined(separator: ", ")
+        let toolsSection = await registry.systemPromptSection(excluding: hiddenFromLLM)
+        let validToolNames = await registry.all()
+            .filter { !hiddenFromLLM.contains($0.name) }
+            .map(\.name).joined(separator: ", ")
 
         let categoriesLine: String
         if let cats = try? await dbPool.read({ db in try Category.fetchAll(db) }), !cats.isEmpty {
@@ -48,6 +53,13 @@ Response: {"tool_name": "get_activity", "tool_arguments": {"start": "last_week"}
 Tool Result: {"date_range": "last_week", "score": 54, "total_active_minutes": 980.0}
 Response: {"answer": "This week your productivity score is 68/100 (23h 40m active) vs 54/100 last week (16h 20m). You're up 14 points and spending 7h 20m more at the computer."}
 
+User: What were my most distracting apps this week?
+Response: {"tool_name": "current_time", "tool_arguments": {}}
+Tool Result: {"today": "2026-05-08"}
+Response: {"tool_name": "get_activity", "tool_arguments": {"start": "this_week"}}
+Tool Result: {"date_range": "this_week", "score": 58, "top_apps": [{"rank": 1, "app": "YouTube", "minutes": 120.0, "tier": -1, "category": "Entertainment"}, {"rank": 2, "app": "Xcode", "minutes": 95.0, "tier": 2, "category": "Development"}]}
+Response: {"answer": "Your most distracting app this week was YouTube (2 hours, Entertainment, tier -1). Xcode was your most productive at 1h 35m."}
+
 User: Is Slack productive or distracting?
 Response: {"tool_name": "classify_app", "tool_arguments": {"app_name": "Slack"}}
 Tool Result: {"app_name": "Slack", "verdict": "neutral", "category": "Communication", "tier": 0, "cached": false}
@@ -63,6 +75,9 @@ Response: {"answer": "Slack is classified as neutral — it falls in the Communi
 - After receiving a tool result, either call another tool or give your final answer.
 - Format durations naturally: "2 hours 15 minutes", not raw seconds.
 - If you have no data for a date, say so clearly in your answer.
+- get_activity returns tier (-2 to +2) and category for every app. Use this to answer productivity/distraction questions WITHOUT calling classify_app. Only call classify_app when the user asks about a specific app by name.
+- NEVER call classify_app in a loop over a list of apps. One classify_app call per conversation turn at most.
 """
     }
 }
+

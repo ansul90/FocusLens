@@ -17,19 +17,29 @@ private enum OllamaTestStatus {
 // MARK: - View
 
 struct AISettingsView: View {
-    @Environment(TodayAggregate.self) private var aggregate
+    @Environment(ActivityAggregate.self) private var aggregate
     @State private var geminiSettings = GeminiSettings()
     @State private var ollamaSettings = OllamaSettings()
     @State private var connectionStatus: ConnectionStatus = .idle
     @State private var reclassifyStatus: ReclassifyStatus = .idle
     @State private var ollamaTestStatus: OllamaTestStatus = .idle
+    @AppStorage(AppConstants.MCP.userDefaultsKeyServerDirectory) private var mcpServerDirectory: String = ""
+    @AppStorage(AppConstants.MCP.userDefaultsKeyUvPath) private var mcpUvPath: String = ""
 
     private let classifier = BrowserClassifier()
+
+    private var resolvedServerDirectory: String {
+        mcpServerDirectory.isEmpty ? AppConstants.MCP.defaultServerDirectory : mcpServerDirectory
+    }
+    private var resolvedUvPath: String {
+        mcpUvPath.isEmpty ? AppConstants.MCP.defaultUvPath : mcpUvPath
+    }
 
     var body: some View {
         Form {
             ollamaSection
             geminiSection
+            mcpSection
         }
         .formStyle(.grouped)
         .padding()
@@ -104,6 +114,61 @@ struct AISettingsView: View {
             }
         } header: {
             Label("Cloud AI (Gemini)", systemImage: "cloud")
+        }
+    }
+
+    // MARK: - MCP section
+
+    private var mcpSection: some View {
+        Section {
+            LabeledContent("Server directory") {
+                HStack(spacing: 6) {
+                    TextField(AppConstants.MCP.defaultServerDirectory, text: $mcpServerDirectory)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(.caption, design: .monospaced))
+                    Button("Browse…") { pickServerDirectory() }
+                }
+            }
+
+            LabeledContent("uv path") {
+                TextField(AppConstants.MCP.defaultUvPath, text: $mcpUvPath)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(.caption, design: .monospaced))
+            }
+
+            HStack(spacing: 8) {
+                Image(systemName: directoryExists ? "checkmark.circle.fill" : "xmark.circle.fill")
+                    .foregroundStyle(directoryExists ? Color.green : Color.red)
+                Text(directoryExists
+                     ? "server.py found at \(resolvedServerDirectory)"
+                     : "Directory not found — Ask FocusLens cannot use render_report")
+                    .font(.caption)
+                    .foregroundStyle(directoryExists ? Color.secondary : Color.red)
+            }
+        } header: {
+            Label("MCP server (render_report)", systemImage: "server.rack")
+        } footer: {
+            Text("Point this at your focuslens-mcp directory. Leave blank to use the default App Support path.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var directoryExists: Bool {
+        let serverPy = URL(fileURLWithPath: resolvedServerDirectory)
+            .appendingPathComponent(AppConstants.MCP.serverScript).path
+        return FileManager.default.fileExists(atPath: serverPy)
+    }
+
+    private func pickServerDirectory() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.message = "Select the focuslens-mcp directory"
+        panel.prompt = "Select"
+        if panel.runModal() == .OK, let url = panel.url {
+            mcpServerDirectory = url.path
         }
     }
 
