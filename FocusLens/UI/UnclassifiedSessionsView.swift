@@ -5,7 +5,7 @@ import os
 // MARK: - Tab container for the Categories section
 
 struct CategoriesTabView: View {
-    enum Tab { case categories, unclassified, overrides }
+    enum Tab { case categories, unclassified, overrides, neverTrack }
 
     @State private var tab: Tab = .categories
     @State private var unclassifiedCount = 0
@@ -23,9 +23,10 @@ struct CategoriesTabView: View {
                     Text(overridesCount > 0
                          ? "Overrides (\(overridesCount))"
                          : "Overrides").tag(Tab.overrides)
+                    Text("Never Track").tag(Tab.neverTrack)
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 440)
+                .frame(maxWidth: 580)
                 Spacer()
             }
             .padding(.vertical, 8)
@@ -34,6 +35,7 @@ struct CategoriesTabView: View {
             case .categories:   CategorySettingsView()
             case .unclassified: UnclassifiedSessionsView()
             case .overrides:    OverridesView()
+            case .neverTrack:   NeverTrackTab()
             }
         }
         .onAppear { refreshCounts() }
@@ -82,6 +84,7 @@ struct UnclassifiedSessionsView: View {
 
     private let store = CategoryStore()
     private let svc = RuleAuthoringService()
+    private let neverTrackStore = NeverTrackStore()
     private let dbPool = DatabaseManager.shared.dbPool
     private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "Unclassified")
 
@@ -202,6 +205,18 @@ struct UnclassifiedSessionsView: View {
                     overrideApp(group.appBundleId, with: cat)
                 }
 
+                Button {
+                    neverTrackApp(group.appBundleId)
+                } label: {
+                    Label("Never Track", systemImage: "eye.slash")
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.quaternary)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+
                 Spacer()
             }
         }
@@ -252,6 +267,7 @@ struct UnclassifiedSessionsView: View {
                     .filter(ActivitySession.Columns.categoryId == nil)
                     .filter(ActivitySession.Columns.isIdle == false)
                     .filter(ActivitySession.Columns.endedAt != nil)
+                    .filter(sql: "app_bundle_id NOT IN (SELECT app_bundle_id FROM never_track_apps WHERE window_title IS NULL)")
                     .order(ActivitySession.Columns.startedAt.desc)
                     .fetchAll(db)
             }
@@ -267,6 +283,16 @@ struct UnclassifiedSessionsView: View {
                 .sorted { $0.sessionCount > $1.sessionCount }
         } catch {
             logger.error("Failed to load unclassified sessions: \(error.localizedDescription)")
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func neverTrackApp(_ bundleId: String) {
+        do {
+            try neverTrackStore.add(bundleId: bundleId)
+            logger.info("Never-track set: \(bundleId)")
+            reload()
+        } catch {
             errorMessage = error.localizedDescription
         }
     }

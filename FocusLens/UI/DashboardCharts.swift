@@ -174,6 +174,7 @@ struct HourlyTierChart: View {
                 )
                 .foregroundStyle(TierColors.color(for: item.element.tier))
             }
+            .chartYScale(domain: 0...60)
             .chartXAxis {
                 AxisMarks(values: Self.xAxisStride) { value in
                     AxisValueLabel {
@@ -225,6 +226,7 @@ struct HourlyCategoryChart: View {
                 )
                 .foregroundStyle(Color(hex: item.element.colorHex) ?? .gray)
             }
+            .chartYScale(domain: 0...60)
             .chartXAxis {
                 AxisMarks(values: Self.xAxisStride) { value in
                     AxisValueLabel {

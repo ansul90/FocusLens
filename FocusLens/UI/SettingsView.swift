@@ -1,28 +1,6 @@
 import SwiftUI
 import os
 
-// MARK: - General tab
-
-struct GeneralSettingsTab: View {
-    var body: some View {
-        Form {
-            Section("Tracking") {
-                LabeledContent("Idle threshold") {
-                    Text(DurationFormatter.string(from: AppConstants.idleThresholdSeconds))
-                }
-                LabeledContent("Minimum session") {
-                    Text(DurationFormatter.string(from: AppConstants.minimumSessionSeconds))
-                }
-                Text("Edit AppConstants.swift to change thresholds.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .formStyle(.grouped)
-        .padding()
-    }
-}
-
 // MARK: - Never-Track tab
 
 struct NeverTrackTab: View {

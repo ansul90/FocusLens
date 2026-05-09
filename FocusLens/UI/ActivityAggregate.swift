@@ -42,6 +42,7 @@ final class ActivityAggregate {
     // MARK: - Range-only stats
 
     private(set) var dailyTierBreakdown: [(date: Date, tier: Int, seconds: Double)] = []
+    private(set) var dailyCategoryBreakdown: [(date: Date, colorHex: String, seconds: Double)] = []
 
     // MARK: - Live tracking state (MenuBarView)
 
@@ -148,21 +149,26 @@ final class ActivityAggregate {
         let categoryStore = self.categoryStore
         let date = self.selectedDate
         let previousDate = Calendar.current.date(byAdding: .day, value: -1, to: date)!
+        let cal = Calendar.current
+        let dayBound = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: date))!
+        let prevDayBound = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: previousDate))!
 
-        let weekInterval = Calendar.current.dateInterval(of: .weekOfYear, for: date) ?? DateInterval(start: date, duration: 0)
+        let weekInterval = cal.dateInterval(of: .weekOfYear, for: date) ?? DateInterval(start: date, duration: 0)
 
         let snapshot = await Task.detached(priority: .utility) { () -> TodaySnapshot in
-            TodaySnapshot(
+            let rawSessions = (try? store.fetchRawSessionsForSplitting(for: date)) ?? []
+            let prevRawSessions = (try? store.fetchRawSessionsForSplitting(for: previousDate)) ?? []
+            return TodaySnapshot(
                 topApps: (try? store.fetchTopApps(for: date, limit: 10)) ?? [],
                 totalActiveSeconds: (try? store.fetchActiveSeconds(for: date)) ?? 0,
-                hourlyTierBreakdown: (try? store.fetchHourlyTierBreakdown(for: date)) ?? [],
-                hourlyCategoryBreakdown: (try? store.fetchHourlyCategoryBreakdown(for: date)) ?? [],
+                hourlyTierBreakdown: HourlyBucketSplitter.splitByTier(rawSessions, dayBound: dayBound),
+                hourlyCategoryBreakdown: HourlyBucketSplitter.splitByCategory(rawSessions, dayBound: dayBound),
                 rawBreakdown: (try? store.fetchCategoryBreakdown(for: date)) ?? [],
                 topInterruptors: (try? store.fetchTopInterruptors(for: date, limit: 5)) ?? [],
                 topWindowTitles: (try? store.fetchTopWindowTitles(for: date, limit: 30)) ?? [],
                 previousActiveSeconds: (try? store.fetchActiveSeconds(for: previousDate)) ?? 0,
                 previousRawBreakdown: (try? store.fetchCategoryBreakdown(for: previousDate)) ?? [],
-                previousHourlyTierBreakdown: (try? store.fetchHourlyTierBreakdown(for: previousDate)) ?? [],
+                previousHourlyTierBreakdown: HourlyBucketSplitter.splitByTier(prevRawSessions, dayBound: prevDayBound),
                 weekDailySeconds: (try? store.fetchDailyActiveSeconds(start: weekInterval.start, end: weekInterval.end)) ?? [],
                 categories: (try? categoryStore.fetchAllCategories()) ?? []
             )
@@ -180,6 +186,7 @@ final class ActivityAggregate {
         previousActiveSeconds = snapshot.previousActiveSeconds
         previousHasData = snapshot.previousActiveSeconds > 0
         dailyTierBreakdown = []
+        dailyCategoryBreakdown = []
 
         let todayResult = computeProductivityScore(
             rawBreakdown: snapshot.rawBreakdown,
@@ -206,6 +213,7 @@ final class ActivityAggregate {
         let topApps: [(appName: String, appBundleId: String, totalSeconds: Double)]
         let topInterruptors: [(appName: String, appBundleId: String, totalSeconds: Double, tier: Int)]
         let dailyTierBreakdown: [(date: Date, tier: Int, seconds: Double)]
+        let dailyCategoryBreakdown: [(date: Date, colorHex: String, seconds: Double)]
         let previousActiveSeconds: Double
         let previousRawBreakdown: [(categoryId: Int64?, totalSeconds: Double)]
         let categories: [Category]
@@ -225,6 +233,7 @@ final class ActivityAggregate {
                 topApps: (try? store.fetchTopApps(start: currentRange.start, end: currentRange.end, limit: 5)) ?? [],
                 topInterruptors: (try? store.fetchTopInterruptors(start: currentRange.start, end: currentRange.end, limit: 5)) ?? [],
                 dailyTierBreakdown: (try? store.fetchDailyActiveTierBreakdown(start: currentRange.start, end: currentRange.end)) ?? [],
+                dailyCategoryBreakdown: (try? store.fetchDailyCategoryBreakdown(start: currentRange.start, end: currentRange.end)) ?? [],
                 previousActiveSeconds: (try? store.fetchActiveSeconds(start: prevRange.start, end: prevRange.end)) ?? 0,
                 previousRawBreakdown: (try? store.fetchCategoryBreakdown(start: prevRange.start, end: prevRange.end)) ?? [],
                 categories: (try? categoryStore.fetchAllCategories()) ?? []
@@ -237,6 +246,7 @@ final class ActivityAggregate {
         topApps = snapshot.topApps
         topInterruptors = snapshot.topInterruptors
         dailyTierBreakdown = snapshot.dailyTierBreakdown
+        dailyCategoryBreakdown = snapshot.dailyCategoryBreakdown
         previousActiveSeconds = snapshot.previousActiveSeconds
         previousHasData = snapshot.previousActiveSeconds > 0
         hourlyTierBreakdown = []

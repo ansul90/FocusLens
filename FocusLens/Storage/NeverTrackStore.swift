@@ -10,6 +10,13 @@ struct NeverTrackStore {
 
         static let databaseTableName = "never_track_apps"
 
+        enum CodingKeys: String, CodingKey {
+            case id
+            case appBundleId = "app_bundle_id"
+            case windowTitle = "window_title"
+            case addedAt = "added_at"
+        }
+
         mutating func didInsert(_ inserted: InsertionSuccess) {
             id = inserted.rowID
         }

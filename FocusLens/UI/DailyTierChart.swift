@@ -1,6 +1,111 @@
 import SwiftUI
 import Charts
 
+// MARK: - DailyCategoryChart
+
+struct DailyCategoryChart: View {
+    let dailyCategoryBreakdown: [(date: Date, colorHex: String, seconds: Double)]
+    let range: DateInterval
+    let kind: ActivityScope
+
+    private static let dayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "EEE"
+        return f
+    }()
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMM d"
+        return f
+    }()
+
+    private var effectiveEnd: Date {
+        min(range.end, Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!))
+    }
+
+    private var days: [Date] {
+        let cal = Calendar.current
+        var result: [Date] = []
+        var cursor = cal.startOfDay(for: range.start)
+        let end = cal.startOfDay(for: effectiveEnd)
+        while cursor < end {
+            result.append(cursor)
+            cursor = cal.date(byAdding: .day, value: 1, to: cursor)!
+        }
+        return result
+    }
+
+    // Top 5 colorHex values by total seconds across the range; rest become neutral gray.
+    private var top5Colors: Set<String> {
+        var totals: [String: Double] = [:]
+        for entry in dailyCategoryBreakdown {
+            totals[entry.colorHex, default: 0] += entry.seconds
+        }
+        let sorted = totals.sorted { $0.value > $1.value }
+        return Set(sorted.prefix(5).map(\.key))
+    }
+
+    private var chartData: [(date: Date, colorHex: String, seconds: Double)] {
+        let cal = Calendar.current
+        let top = top5Colors
+        var byDayColor: [Date: [String: Double]] = [:]
+        for entry in dailyCategoryBreakdown {
+            let day = cal.startOfDay(for: entry.date)
+            let key = top.contains(entry.colorHex) ? entry.colorHex : "9E9E9E"
+            byDayColor[day, default: [:]][key, default: 0] += entry.seconds
+        }
+        var result: [(date: Date, colorHex: String, seconds: Double)] = []
+        for day in days {
+            for (colorHex, seconds) in (byDayColor[day] ?? [:]) where seconds > 0 {
+                result.append((date: day, colorHex: colorHex, seconds: seconds))
+            }
+        }
+        return result
+    }
+
+    var body: some View {
+        if dailyCategoryBreakdown.isEmpty {
+            Text("No activity recorded")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            Chart(Array(chartData.enumerated()), id: \.offset) { item in
+                BarMark(
+                    x: .value("Day", item.element.date, unit: .day),
+                    y: .value("Hours", item.element.seconds / 3600)
+                )
+                .foregroundStyle(Color(hex: item.element.colorHex) ?? .gray)
+            }
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .day)) { value in
+                    AxisValueLabel(centered: true) {
+                        if let date = value.as(Date.self) {
+                            Text(kind == .week
+                                 ? Self.dayFormatter.string(from: date)
+                                 : Self.dateFormatter.string(from: date))
+                                .font(.caption2)
+                        }
+                    }
+                }
+            }
+            .chartYAxis {
+                AxisMarks { value in
+                    AxisValueLabel {
+                        if let h = value.as(Double.self) {
+                            Text("\(Int(h))h")
+                        }
+                    }
+                    AxisGridLine()
+                }
+            }
+        }
+    }
+}
+
+// MARK: - DailyTierChart
+
 struct DailyTierChart: View {
     let dailyTierBreakdown: [(date: Date, tier: Int, seconds: Double)]
     let range: DateInterval

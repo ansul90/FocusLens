@@ -69,6 +69,56 @@ struct HeroTimeView: View {
     }
 }
 
+// MARK: - HeroStatPair
+
+struct HeroStatPair: View {
+    let topCategoryName: String
+    let topCategoryColorHex: String
+    let topCategorySeconds: Double
+    let topAppName: String
+    let topAppBundleId: String
+    let topAppSeconds: Double
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Top category")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(Color(hex: topCategoryColorHex) ?? .gray)
+                        .frame(width: 10, height: 10)
+                    Text(topCategoryName)
+                        .font(.callout)
+                        .lineLimit(1)
+                }
+                Text(DurationFormatter.string(from: topCategorySeconds))
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .monospacedDigit()
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Top app")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                HStack(spacing: 5) {
+                    AppIcon(bundleId: topAppBundleId)
+                        .frame(width: 12, height: 12)
+                    Text(topAppName)
+                        .font(.callout)
+                        .lineLimit(1)
+                }
+                Text(DurationFormatter.string(from: topAppSeconds))
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .monospacedDigit()
+            }
+        }
+    }
+}
+
 // MARK: - CategoryPercentRow
 
 struct CategoryPercentRow: View {

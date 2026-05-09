@@ -6,8 +6,13 @@ struct CategorySettingsView: View {
     // MARK: - State
 
     @State private var categories: [Category] = []
-    @State private var selectedCategory: Category?
+    @State private var selectedCategoryId: Int64?
     @State private var rules: [CategoryRule] = []
+
+    private var selectedCategory: Category? {
+        guard let id = selectedCategoryId else { return nil }
+        return categories.first { $0.id == id }
+    }
 
     // Inline edit fields (synced when selection changes)
     @State private var editName = ""
@@ -73,7 +78,7 @@ struct CategorySettingsView: View {
 
     private var leftPanel: some View {
         VStack(spacing: 0) {
-            List(selection: $selectedCategory) {
+            List(selection: $selectedCategoryId) {
                 ForEach(categories) { cat in
                     HStack(spacing: 8) {
                         Circle()
@@ -86,11 +91,12 @@ struct CategorySettingsView: View {
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
-                    .tag(cat as Category?)
+                    .contentShape(Rectangle())
+                    .tag(cat.id)
                 }
             }
-            .onChange(of: selectedCategory) { _, cat in
-                syncEditState(to: cat)
+            .onChange(of: selectedCategoryId) { _, _ in
+                syncEditState(to: selectedCategory)
                 reloadRules()
                 showAddRuleForm = false
                 resetRuleForm()
@@ -411,7 +417,7 @@ struct CategorySettingsView: View {
         do {
             try store.update(updated)
             reload()
-            selectedCategory = categories.first { $0.id == updated.id }
+            selectedCategoryId = updated.id
         } catch {
             errorMessage = "Failed to save: \(error.localizedDescription)"
         }
@@ -428,7 +434,7 @@ struct CategorySettingsView: View {
             let saved = try store.insert(cat)
             reload()
             showAddCategory = false
-            selectedCategory = saved
+            selectedCategoryId = saved.id
             resetNewCatForm()
         } catch {
             errorMessage = "Failed to add category: \(error.localizedDescription)"

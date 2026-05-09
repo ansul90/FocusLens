@@ -21,7 +21,7 @@ struct DashboardView: View {
 
     private enum NavDestination: String, Hashable {
         case activity, ask
-        case settingsGeneral, settingsCategories, settingsNeverTrack, settingsAI, settingsSessionBrowser
+        case settingsCategories, settingsAI, settingsSessionBrowser
     }
 
     var body: some View {
@@ -34,12 +34,8 @@ struct DashboardView: View {
                         .tag(NavDestination.ask)
                 }
                 Section("Settings") {
-                    Label("General", systemImage: "gear")
-                        .tag(NavDestination.settingsGeneral)
                     Label("Categories", systemImage: "tag")
                         .tag(NavDestination.settingsCategories)
-                    Label("Never Track", systemImage: "eye.slash")
-                        .tag(NavDestination.settingsNeverTrack)
                     Label("AI", systemImage: "sparkles")
                         .tag(NavDestination.settingsAI)
                     Label("Session Browser", systemImage: "list.bullet.rectangle")
@@ -53,12 +49,8 @@ struct DashboardView: View {
                 activityContent
             case .ask:
                 AskFocusLensView(viewModel: askViewModel)
-            case .settingsGeneral:
-                GeneralSettingsTab()
             case .settingsCategories:
                 CategoriesTabView()
-            case .settingsNeverTrack:
-                NeverTrackTab()
             case .settingsAI:
                 AISettingsView()
             case .settingsSessionBrowser:
@@ -240,7 +232,7 @@ struct DashboardView: View {
             Divider()
 
             categoriesColumn
-                .frame(width: 260)
+                .frame(minWidth: 280, idealWidth: 320, maxWidth: 360)
         }
     }
 
@@ -256,15 +248,13 @@ struct DashboardView: View {
                         .foregroundStyle(.tertiary)
                 }
                 Spacer()
-                if aggregate.scope == .today {
-                    Picker("", selection: $hourlyColorMode) {
-                        ForEach(HourlyColorMode.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
+                Picker("", selection: $hourlyColorMode) {
+                    ForEach(HourlyColorMode.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
                     }
-                    .pickerStyle(.segmented)
-                    .frame(width: 170)
                 }
+                .pickerStyle(.segmented)
+                .frame(width: 170)
             }
 
             if aggregate.scope == .today {
@@ -283,19 +273,32 @@ struct DashboardView: View {
                         .frame(height: 90)
                 }
             } else {
-                DailyTierChart(
-                    dailyTierBreakdown: aggregate.dailyTierBreakdown,
-                    range: aggregate.range,
-                    kind: aggregate.scope
-                )
-                .frame(height: 120)
+                if hourlyColorMode == .tier {
+                    DailyTierChart(
+                        dailyTierBreakdown: aggregate.dailyTierBreakdown,
+                        range: aggregate.range,
+                        kind: aggregate.scope
+                    )
+                    .frame(height: 120)
+                } else {
+                    DailyCategoryChart(
+                        dailyCategoryBreakdown: aggregate.dailyCategoryBreakdown,
+                        range: aggregate.range,
+                        kind: aggregate.scope
+                    )
+                    .frame(height: 120)
+                }
             }
 
             ProductivityBreakdownBar(breakdown: aggregate.productivityTierBreakdown)
                 .frame(height: 8)
                 .padding(.top, 4)
 
-            tierLegend
+            if hourlyColorMode == .tier {
+                tierLegend
+            } else {
+                categoryLegend
+            }
         }
     }
 
@@ -316,6 +319,29 @@ struct DashboardView: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
+            }
+        }
+    }
+
+    private var categoryLegend: some View {
+        let visible = Array(aggregate.categoryBreakdown.prefix(6))
+        let remaining = aggregate.categoryBreakdown.count - visible.count
+
+        return HStack(spacing: 12) {
+            ForEach(visible, id: \.category.name) { entry in
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(Color(hex: entry.category.colorHex) ?? .gray)
+                        .frame(width: 6, height: 6)
+                    Text(entry.category.name)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if remaining > 0 {
+                Text("+\(remaining) more")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
             }
         }
     }

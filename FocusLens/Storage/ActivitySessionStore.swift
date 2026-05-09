@@ -69,6 +69,67 @@ struct ActivitySessionStore: Sendable {
         return try fetchCategoryBreakdown(startISO: s, endISO: e)
     }
 
+    func fetchRawSessionsForSplitting(for date: Date) throws -> [RawSession] {
+        let (start, end) = dayBoundsISO(for: date)
+        return try dbPool.read { db in
+            let rows = try Row.fetchAll(
+                db,
+                sql: """
+                    SELECT a.started_at, a.ended_at,
+                           COALESCE(c.is_productive, 0) as tier,
+                           COALESCE(c.color_hex, '9E9E9E') as color_hex
+                    FROM activity_sessions a
+                    LEFT JOIN categories c ON a.category_id = c.id
+                    WHERE a.started_at >= ? AND a.started_at < ?
+                      AND a.is_idle = 0 AND a.ended_at IS NOT NULL
+                    ORDER BY a.started_at
+                    """,
+                arguments: [start, end]
+            )
+            let fmt = DateUtils.dbTimestampFormatter()
+            return rows.compactMap { row -> RawSession? in
+                guard let startStr: String = row["started_at"],
+                      let endStr: String = row["ended_at"],
+                      let startedAt = fmt.date(from: startStr),
+                      let endedAt = fmt.date(from: endStr) else { return nil }
+                return RawSession(
+                    startedAt: startedAt,
+                    endedAt: endedAt,
+                    tier: row["tier"],
+                    colorHex: row["color_hex"]
+                )
+            }
+        }
+    }
+
+    func fetchDailyCategoryBreakdown(start: Date, end: Date) throws -> [(date: Date, colorHex: String, seconds: Double)] {
+        let (s, e) = rangeBoundsISO(start: start, end: end)
+        return try dbPool.read { db in
+            let rows = try Row.fetchAll(
+                db,
+                sql: """
+                    SELECT
+                        DATE(a.started_at, 'localtime') as day,
+                        COALESCE(c.color_hex, '9E9E9E') as color_hex,
+                        COALESCE(SUM(a.duration_seconds), 0) as total
+                    FROM activity_sessions a
+                    LEFT JOIN categories c ON a.category_id = c.id
+                    WHERE a.started_at >= ? AND a.started_at < ?
+                      AND a.is_idle = 0 AND a.ended_at IS NOT NULL
+                    GROUP BY day, a.category_id
+                    ORDER BY day, total DESC
+                    """,
+                arguments: [s, e]
+            )
+            let fmt = DateUtils.dayFormatter()
+            return rows.compactMap { row -> (date: Date, colorHex: String, seconds: Double)? in
+                guard let dayStr: String = row["day"],
+                      let date = fmt.date(from: dayStr) else { return nil }
+                return (date: date, colorHex: row["color_hex"], seconds: row["total"])
+            }
+        }
+    }
+
     func fetchHourlyCategoryBreakdown(for date: Date) throws -> [(hour: Int, colorHex: String, seconds: Double)] {
         let (start, end) = dayBoundsISO(for: date)
         return try dbPool.read { db in
