@@ -4,8 +4,6 @@ Single source of truth alongside FocusLens's own tables. The Swift app ignores
 this table (GRDB only processes migrations it knows about); we create it on
 first use via db._connect_rw().
 """
-from __future__ import annotations
-
 import json
 from datetime import datetime
 

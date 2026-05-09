@@ -5,8 +5,6 @@ a local Ollama model. The agent decides tool calls; the host dispatches them
 through the MCP client and feeds results back. When show_dashboard returns a
 file:// URL, the host opens it in the default browser.
 """
-from __future__ import annotations
-
 import argparse
 import asyncio
 import json

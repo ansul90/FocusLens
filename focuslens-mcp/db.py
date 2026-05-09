@@ -4,9 +4,6 @@ Activity-session queries are read-only (Swift owns that schema).
 The app_insights table is owned by this Python layer — created here on first
 use, ignored by the Swift app's GRDB migrations.
 """
-from __future__ import annotations
-
-import json
 import os
 import sqlite3
 from contextlib import contextmanager
@@ -100,61 +97,6 @@ def top_apps_for_range(start: date, end_inclusive: date, limit: int = 10) -> lis
         return [dict(r) for r in conn.execute(sql, (start_iso, end_iso, limit)).fetchall()]
 
 
-VERDICT_TIER = {"productive": 1, "neutral": 0, "distracting": -1}
-
-
-def get_bundle_id(app_name: str) -> str | None:
-    """Return the most recently seen bundle ID for an app name."""
-    with _connect_ro() as conn:
-        row = conn.execute(
-            """SELECT app_bundle_id FROM activity_sessions
-               WHERE app_name = ? COLLATE NOCASE
-               ORDER BY started_at DESC LIMIT 1""",
-            (app_name,),
-        ).fetchone()
-        return row["app_bundle_id"] if row else None
-
-
-def write_category_rule(app_name: str, verdict: str) -> dict | None:
-    """Insert or replace a high-priority category_rules row for app_name.
-
-    Finds the best-fit existing category for the verdict's tier, then writes
-    a bundle-ID rule so FocusLens picks it up on next recategorization.
-    Returns the chosen category dict, or None if the app's bundle ID is unknown.
-    """
-    bundle_id = get_bundle_id(app_name)
-    if not bundle_id:
-        return None
-    tier = VERDICT_TIER.get(verdict, 0)
-    with _connect_rw() as conn:
-        if tier > 0:
-            row = conn.execute(
-                "SELECT id, name FROM categories WHERE is_productive > 0 ORDER BY is_productive DESC LIMIT 1"
-            ).fetchone()
-        elif tier < 0:
-            row = conn.execute(
-                "SELECT id, name FROM categories WHERE is_productive < 0 ORDER BY is_productive ASC LIMIT 1"
-            ).fetchone()
-        else:
-            row = conn.execute(
-                "SELECT id, name FROM categories ORDER BY ABS(is_productive) ASC, id ASC LIMIT 1"
-            ).fetchone()
-        if not row:
-            return None
-        category_id, category_name = row["id"], row["name"]
-        # Remove any prior rule for this bundle ID so we don't accumulate duplicates.
-        conn.execute(
-            "DELETE FROM category_rules WHERE match_type='app_bundle' AND match_value=?",
-            (bundle_id,),
-        )
-        conn.execute(
-            """INSERT INTO category_rules (category_id, match_type, match_value, priority)
-               VALUES (?, 'app_bundle', ?, 100)""",
-            (category_id, bundle_id),
-        )
-    return {"category_id": category_id, "category_name": category_name, "bundle_id": bundle_id}
-
-
 def productivity_score(start: date, end_inclusive: date) -> dict:
     """Weighted productivity score (0-100) for a date range.
 
@@ -182,6 +124,7 @@ def productivity_score(start: date, end_inclusive: date) -> dict:
     tier_seconds: dict[int, int] = {r["tier"]: r["total_seconds"] for r in rows}
     total = sum(tier_seconds.values())
     weighted_sum = sum(tier * secs for tier, secs in tier_seconds.items())
+    # score = ((weighted_avg_tier + 2) / 4) * 100 — mirrors ProductivityScoring.swift:computeProductivityScore
     score = (
         max(0, min(100, int(((weighted_sum / total) + 2.0) / 4.0 * 100)))
         if total > 0

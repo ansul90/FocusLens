@@ -39,17 +39,6 @@ struct ActivitySessionStore: Sendable {
         }
     }
 
-    func fetchTodaySessions() throws -> [ActivitySession] {
-        let (start, end) = dayBoundsISO(for: Date())
-        return try dbPool.read { db in
-            try ActivitySession
-                .filter(ActivitySession.Columns.startedAt >= start)
-                .filter(ActivitySession.Columns.startedAt < end)
-                .filter(ActivitySession.Columns.endedAt != nil)
-                .fetchAll(db)
-        }
-    }
-
     func fetchTopApps(for date: Date, limit: Int) throws -> [(appName: String, appBundleId: String, totalSeconds: Double)] {
         let (start, end) = dayBoundsISO(for: date)
         return try fetchTopApps(startISO: start, endISO: end, limit: limit)
@@ -220,6 +209,9 @@ struct ActivitySessionStore: Sendable {
 
     // MARK: - Private implementations
 
+    private func dayBoundsISO(for date: Date) -> (start: String, end: String) { DateUtils.dayBoundsISO(for: date) }
+    private func rangeBoundsISO(start: Date, end: Date) -> (start: String, end: String) { DateUtils.rangeBoundsISO(start: start, end: end) }
+
     private func fetchTopApps(startISO: String, endISO: String, limit: Int) throws -> [(appName: String, appBundleId: String, totalSeconds: Double)] {
         try dbPool.read { db in
             let rows = try Row.fetchAll(
@@ -308,23 +300,4 @@ struct ActivitySessionStore: Sendable {
         }
     }
 
-    // Returns (startOfDay, startOfNextDay) as UTC ISO strings for the given date.
-    private func dayBoundsISO(for date: Date) -> (start: String, end: String) {
-        let cal = Calendar.current
-        let start = cal.startOfDay(for: date)
-        let end = cal.date(byAdding: .day, value: 1, to: start)!
-        return (isoString(from: start), isoString(from: end))
-    }
-
-    // Returns (start, end) as UTC ISO strings for an arbitrary date range.
-    private func rangeBoundsISO(start: Date, end: Date) -> (start: String, end: String) {
-        return (isoString(from: start), isoString(from: end))
-    }
-
-    private func isoString(from date: Date) -> String {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-        fmt.timeZone = TimeZone(identifier: "UTC")!
-        return fmt.string(from: date)
-    }
 }

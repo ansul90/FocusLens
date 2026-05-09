@@ -10,8 +10,6 @@ Tools:
   - render_report        → compose a custom Prefab report, returns URL (UI)
   - show_dashboard       → open the full interactive dashboard (UI)
 """
-from __future__ import annotations
-
 import logging
 from datetime import date, timedelta
 from typing import Literal

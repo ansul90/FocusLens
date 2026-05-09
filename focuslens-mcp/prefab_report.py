@@ -1,6 +1,4 @@
 """Generic Prefab renderer for agent-composed ReportSpec objects."""
-from __future__ import annotations
-
 from prefab_ui import PrefabApp
 from prefab_ui.components import (
     Card,
@@ -15,7 +13,6 @@ from prefab_ui.components import (
     Muted,
     Progress,
     Row,
-    Separator,
     Small,
     Table,
     TableBody,
@@ -34,13 +31,7 @@ from report_spec import (
     TextSection,
 )
 
-TIER_VARIANT: dict[int, str] = {
-    2:  "success",
-    1:  "info",
-    0:  "muted",
-    -1: "warning",
-    -2: "destructive",
-}
+from prefab_utils import TIER_VARIANT
 
 
 def _render_text(section: TextSection) -> None:

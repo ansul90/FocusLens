@@ -41,6 +41,7 @@ func computeProductivityScore(
     let tierBreakdown = tierTotals.map { (tier: $0.key, seconds: $0.value) }
         .sorted { $0.tier > $1.tier }
 
+    // score = ((weighted_avg_tier + 2) / 4) * 100 — mirrors db.py:productivity_score
     let score: Int
     if categorizedTotal > 0 {
         let avg = weightedSum / categorizedTotal
@@ -85,6 +86,7 @@ func computeProductivityScoreForRange(
     let tierBreakdown = tierTotals.map { (tier: $0.key, seconds: $0.value) }
         .sorted { $0.tier > $1.tier }
 
+    // score = ((weighted_avg_tier + 2) / 4) * 100 — mirrors db.py:productivity_score
     let score: Int
     if categorizedTotal > 0 {
         let avg = weightedSum / categorizedTotal

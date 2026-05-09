@@ -6,19 +6,15 @@ Layout:
   - Middle row: Category Breakdown card (left) | Hourly Activity card (right)
   - Bottom: Top Apps grid with verdict buttons
 """
-from __future__ import annotations
-
 from datetime import date, timedelta
-from urllib.parse import quote
 
 from prefab_ui import PrefabApp
-from prefab_ui.actions import Fetch, OpenLink
+from prefab_ui.actions import OpenLink
 from prefab_ui.components import (
     Badge,
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
     Column,
@@ -38,22 +34,7 @@ from prefab_ui.components import (
 
 import db
 import insights as insights_mod
-
-TIER_VARIANT: dict[int, str] = {
-    2:  "success",
-    1:  "info",
-    0:  "muted",
-    -1: "warning",
-    -2: "destructive",
-}
-
-TIER_LABEL: dict[int, str] = {
-    2:  "Very productive",
-    1:  "Productive",
-    0:  "Neutral",
-    -1: "Distracting",
-    -2: "Very distracting",
-}
+from prefab_utils import TIER_VARIANT
 
 VERDICT_VARIANT: dict[str, str] = {
     "productive":   "success",
@@ -212,24 +193,10 @@ def _hourly_card(hours: list[dict]) -> None:
                         Small(_fmt_duration(h["total_seconds"]), cssClass="w-14 tabular-nums")
 
 
-def _verdict_buttons(app_name: str, current: str | None, base_url: str, start: date, end: date) -> None:
-    encoded = quote(app_name, safe="")
-    patch_url  = f"{base_url}/api/insight/{encoded}"
-    reload_url = f"{base_url}/?start={start.isoformat()}&end={end.isoformat()}"
-    for verdict in ("productive", "neutral", "distracting"):
-        Button(
-            verdict.title(),
-            variant=VERDICT_VARIANT[verdict] if current == verdict else "outline",
-            size="sm",
-            on_click=Fetch.patch(patch_url, body={"verdict": verdict}, on_success=OpenLink(reload_url)),
-        )
-
-
-def _top_apps_section(apps: list[dict], insight_map: dict, base_url: str, start: date, end: date) -> None:
+def _top_apps_section(apps: list[dict], insight_map: dict) -> None:
     with Card():
         with CardHeader():
             CardTitle("Top Apps")
-            CardDescription("Correct the agent's classification with the verdict buttons.")
         with CardContent():
             with Grid(minColumnWidth="280px", gap=4):
                 for row in apps:
@@ -251,9 +218,6 @@ def _top_apps_section(apps: list[dict], insight_map: dict, base_url: str, start:
                         if insight:
                             with CardContent():
                                 Small(insight["summary"])
-                        with CardFooter():
-                            with Row(gap=2):
-                                _verdict_buttons(row["app_name"], current_verdict, base_url, start, end)
 
 
 def build_app(
@@ -286,5 +250,5 @@ def build_app(
             with Grid(columns=2, gap=4, cssClass="mb-4"):
                 _category_card(cats)
                 _hourly_card(hours)
-            _top_apps_section(apps, insight_map, base_url, start, end)
+            _top_apps_section(apps, insight_map)
     return app

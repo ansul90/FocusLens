@@ -1,26 +1,18 @@
 """FastAPI server that backs the interactive Prefab dashboard.
 
 Starts lazily as a daemon thread on first call to ensure_running().
-The Prefab HTML fetches /api/insight/{app_name} (PATCH) when the user
-clicks a verdict button, updating both app_insights and category_rules
-in focuslens.db, then reloads the dashboard.
 """
-from __future__ import annotations
-
 import threading
 import time
 import logging
 import uuid
 from datetime import date, timedelta
-from typing import Literal
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
 
-import db
 import insights
 import prefab_app as _prefab
 import prefab_report as _report
@@ -68,11 +60,6 @@ api.add_middleware(
 )
 
 
-class VerdictUpdate(BaseModel):
-    verdict: Literal["productive", "neutral", "distracting"]
-    summary: str | None = None
-
-
 @api.get("/", response_class=HTMLResponse)
 def dashboard(
     start: date | None = None,
@@ -93,17 +80,6 @@ def render_report(report_id: str) -> str:
         raise HTTPException(status_code=404, detail=f"Report '{report_id}' not found or expired.")
     spec, _ = entry
     return _report.build_report(spec).html()
-
-
-@api.patch("/api/insight/{app_name}", response_model=dict)
-def update_insight(app_name: str, body: VerdictUpdate) -> dict:
-    """Update verdict in app_insights + write matching category_rule."""
-    existing = insights.get(app_name)
-    summary = body.summary or (existing or {}).get("summary") or f"{app_name} — verdict set by user."
-    entry = insights.upsert(app_name, body.verdict, summary)
-    category = db.write_category_rule(app_name, body.verdict)
-    log.info("updated %s → %s (category: %s)", app_name, body.verdict, category)
-    return {"insight": entry, "category_rule": category}
 
 
 def ensure_running() -> str:

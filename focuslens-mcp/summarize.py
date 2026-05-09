@@ -4,8 +4,6 @@ Pulls structured stats from db.py and asks Ollama to produce a 2-3 paragraph
 plain-English summary. Returns stats + narrative; degrades gracefully if
 Ollama is unreachable.
 """
-from __future__ import annotations
-
 import logging
 import os
 from datetime import date

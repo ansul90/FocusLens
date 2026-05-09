@@ -20,8 +20,8 @@
 		2A000000000000000000000B /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000000D /* PermissionManager.swift */; };
 		2A000000000000000000000C /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000000E /* MenuBarView.swift */; };
 		FA000000000000000000AB08 /* ActivityAggregate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA08 /* ActivityAggregate.swift */; };
-		2A000000000000000000000E /* DateFormatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000010 /* DateFormatters.swift */; };
 		2A000000000000000000000F /* DurationFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000011 /* DurationFormatter.swift */; };
+		BE000000000000000000AB01 /* DateUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE000000000000000000AA01 /* DateUtils.swift */; };
 		2A0000000000000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000015 /* Assets.xcassets */; };
 		2A0000000000000000000011 /* ActivityTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000012 /* ActivityTrackerTests.swift */; };
 		2A0000000000000000000012 /* IdleDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000013 /* IdleDetectorTests.swift */; };
@@ -110,8 +110,8 @@
 		1A000000000000000000000D /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
 		1A000000000000000000000E /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		FA000000000000000000AA08 /* ActivityAggregate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityAggregate.swift; sourceTree = "<group>"; };
-		1A0000000000000000000010 /* DateFormatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateFormatters.swift; sourceTree = "<group>"; };
 		1A0000000000000000000011 /* DurationFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DurationFormatter.swift; sourceTree = "<group>"; };
+		BE000000000000000000AA01 /* DateUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateUtils.swift; sourceTree = "<group>"; };
 		1A0000000000000000000012 /* ActivityTrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTrackerTests.swift; sourceTree = "<group>"; };
 		1A0000000000000000000013 /* IdleDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleDetectorTests.swift; sourceTree = "<group>"; };
 		1A0000000000000000000014 /* DurationFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DurationFormatterTests.swift; sourceTree = "<group>"; };
@@ -309,8 +309,8 @@
 		3A0000000000000000000009 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
-				1A0000000000000000000010 /* DateFormatters.swift */,
 				1A0000000000000000000011 /* DurationFormatter.swift */,
+				BE000000000000000000AA01 /* DateUtils.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -514,8 +514,8 @@
 				FA000000000000000000AB08 /* ActivityAggregate.swift in Sources */,
 				F0C9E6932FADF30400352144 /* MCPClient.swift in Sources */,
 				F0C9E6942FADF30400352144 /* MCPAgentTool.swift in Sources */,
-				2A000000000000000000000E /* DateFormatters.swift in Sources */,
 				2A000000000000000000000F /* DurationFormatter.swift in Sources */,
+				BE000000000000000000AB01 /* DateUtils.swift in Sources */,
 				2A0000000000000000000015 /* Category.swift in Sources */,
 				2A0000000000000000000016 /* CategoryRule.swift in Sources */,
 				2A0000000000000000000017 /* Migration002_Categories.swift in Sources */,

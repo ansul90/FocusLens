@@ -6,10 +6,6 @@ enum DurationFormatter {
         format(seconds: seconds)
     }
 
-    static func shortString(from seconds: Double) -> String {
-        format(seconds: seconds)
-    }
-
     private static func format(seconds: Double) -> String {
         guard seconds >= 0 else { return "0m" }
         guard seconds >= 60 else { return "< 1m" }

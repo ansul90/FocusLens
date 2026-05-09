@@ -48,32 +48,4 @@ struct DurationFormatterTests {
     func twoHours() {
         #expect(DurationFormatter.string(from: 7200.0) == "2h")
     }
-
-    @Suite("shortString")
-    struct ShortStringTests {
-        @Test("negative seconds returns 0m")
-        func negativeSeconds() {
-            #expect(DurationFormatter.shortString(from: -1.0) == "0m")
-        }
-
-        @Test("zero seconds returns < 1m")
-        func zeroSeconds() {
-            #expect(DurationFormatter.shortString(from: 0.0) == "< 1m")
-        }
-
-        @Test("45 minutes returns 45m")
-        func fortyFiveMinutes() {
-            #expect(DurationFormatter.shortString(from: 2700.0) == "45m")
-        }
-
-        @Test("1h 23m returns 1h 23m")
-        func oneHourTwentyThreeMinutes() {
-            #expect(DurationFormatter.shortString(from: 5580.0) == "1h 33m")
-        }
-
-        @Test("2h returns 2h")
-        func twoHours() {
-            #expect(DurationFormatter.shortString(from: 7200.0) == "2h")
-        }
-    }
 }

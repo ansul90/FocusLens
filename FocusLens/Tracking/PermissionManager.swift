@@ -9,10 +9,6 @@ final class PermissionManager {
         accessibilityGranted = AXIsProcessTrusted()
     }
 
-    func checkAndRefresh() {
-        accessibilityGranted = AXIsProcessTrusted()
-    }
-
     func requestAccessibility() {
         let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true]
         AXIsProcessTrustedWithOptions(options as CFDictionary)

@@ -24,11 +24,6 @@ struct ActivitySession: Codable, Identifiable, Hashable, Sendable {
         case categoryId = "category_id"
     }
 
-    var isActive: Bool { endedAt == nil }
-
-    var displayDuration: TimeInterval {
-        durationSeconds ?? Date().timeIntervalSince(startedAt)
-    }
 }
 
 extension ActivitySession: FetchableRecord, MutablePersistableRecord {

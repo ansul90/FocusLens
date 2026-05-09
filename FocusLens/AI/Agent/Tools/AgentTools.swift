@@ -59,8 +59,8 @@ struct GetActivityTool: AgentTool {
         let rawEnd = args["end"] as? String
         let range: DateRange
         if let end = rawEnd {
-            let (s, _) = dayBoundsISO(for: resolveDate(rawStart))
-            let (_, e) = dayBoundsISO(for: resolveDate(end))
+            let (s, _) = DateUtils.dayBoundsISO(for: resolveDate(rawStart))
+            let (_, e) = DateUtils.dayBoundsISO(for: resolveDate(end))
             range = DateRange(start: s, end: e)
         } else {
             range = buildDateRange(rawStart)
@@ -185,7 +185,7 @@ struct QuerySessionsTool: AgentTool {
         let appFilter = args["app_name"] as? String
         let limit = (args["limit"] as? Int) ?? 20
 
-        let (start, end) = dayBoundsISO(for: date)
+        let (start, end) = DateUtils.dayBoundsISO(for: date)
 
         do {
             struct SessionOut: Encodable {
@@ -331,16 +331,6 @@ func resolveDate(_ raw: String) -> Date {
     }
 }
 
-func dayBoundsISO(for date: Date) -> (start: String, end: String) {
-    let cal = Calendar.current
-    let start = cal.startOfDay(for: date)
-    let end = cal.date(byAdding: .day, value: 1, to: start)!
-    let fmt = DateFormatter()
-    fmt.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-    fmt.timeZone = TimeZone(identifier: "UTC")!
-    return (fmt.string(from: start), fmt.string(from: end))
-}
-
 func buildDateRange(_ raw: String) -> DateRange {
     let lower = raw.lowercased().trimmingCharacters(in: .whitespaces)
     let cal = Calendar.current
@@ -351,18 +341,18 @@ func buildDateRange(_ raw: String) -> DateRange {
         let startOfWeek = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)
         let start = cal.date(from: startOfWeek)!
         let end = cal.date(byAdding: .day, value: 7, to: start)!
-        let (s, _) = dayBoundsISO(for: start)
-        let (_, e) = dayBoundsISO(for: cal.date(byAdding: .day, value: -1, to: end)!)
+        let (s, _) = DateUtils.dayBoundsISO(for: start)
+        let (_, e) = DateUtils.dayBoundsISO(for: cal.date(byAdding: .day, value: -1, to: end)!)
         return DateRange(start: s, end: e)
     case "last_week":
         let startOfThisWeek = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))!
         let startOfLastWeek = cal.date(byAdding: .day, value: -7, to: startOfThisWeek)!
-        let (s, _) = dayBoundsISO(for: startOfLastWeek)
-        let (_, e) = dayBoundsISO(for: cal.date(byAdding: .day, value: 6, to: startOfLastWeek)!)
+        let (s, _) = DateUtils.dayBoundsISO(for: startOfLastWeek)
+        let (_, e) = DateUtils.dayBoundsISO(for: cal.date(byAdding: .day, value: 6, to: startOfLastWeek)!)
         return DateRange(start: s, end: e)
     default:
         let date = resolveDate(raw)
-        let (s, e) = dayBoundsISO(for: date)
+        let (s, e) = DateUtils.dayBoundsISO(for: date)
         return DateRange(start: s, end: e)
     }
 }
