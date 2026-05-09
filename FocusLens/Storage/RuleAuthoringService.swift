@@ -2,7 +2,7 @@ import Foundation
 import GRDB
 import os
 
-private let logger = Logger(subsystem: "com.focuslens.app", category: "RuleAuthoringService")
+private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "RuleAuthoringService")
 
 /// Single chokepoint for rule CRUD + session backfill.
 /// Every mutation shows how many sessions are affected, then applies atomically.

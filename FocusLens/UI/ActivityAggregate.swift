@@ -60,7 +60,7 @@ final class ActivityAggregate {
         }
     }
 
-    private let logger = Logger(subsystem: "com.focuslens.app", category: "ActivityAggregate")
+    private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "ActivityAggregate")
     private let store: ActivitySessionStore
     private let categoryStore: CategoryStore
 

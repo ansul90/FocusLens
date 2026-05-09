@@ -56,8 +56,13 @@ enum ResponseParser {
             }
         }
 
-        // Nothing matched — look for top-level siblings of tool_name / answer / name
-        let reserved: Set<String> = ["tool_name", "answer", "name", "thought", "reasoning"]
+        // Nothing matched — look for top-level siblings of tool_name / answer / name.
+        // Extended set covers chain-of-thought keys emitted by local models.
+        let reserved: Set<String> = [
+            "tool_name", "answer", "name",
+            "thought", "reasoning", "thinking", "chain_of_thought",
+            "scratchpad", "rationale", "analysis", "plan"
+        ]
         let siblings = dict.filter { !reserved.contains($0.key) }
         if !siblings.isEmpty { return siblings }
 

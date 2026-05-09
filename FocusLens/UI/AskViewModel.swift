@@ -268,50 +268,37 @@ final class AskViewModel {
     /// Build a short summary of what tool was called and its key data,
     /// keeping the rolling context tiny enough that the local model doesn't degrade.
     private func compactToolSummary(from trace: [TraceStep]) -> String {
-        // Find the last tool call
-        guard let lastStep = trace.reversed().first(where: {
-            if case .toolCall = $0.kind { return true }
-            return false
-        }), case .toolCall(let toolName, let args, let result) = lastStep.kind else {
-            return ""
-        }
+        let summaries: [String] = trace.compactMap { step in
+            guard case .toolCall(let toolName, let args, let result) = step.kind else { return nil }
 
-        // Try to extract the most identifying piece of data from the result
-        let resultData = result.data(using: .utf8)
-        let parsed = resultData.flatMap { try? JSONSerialization.jsonObject(with: $0) }
+            let parsed = result.data(using: .utf8).flatMap { try? JSONSerialization.jsonObject(with: $0) }
 
-        var summary = "Called \(toolName)"
-        let argsStr = args.map { "\($0.key)=\($0.value)" }.joined(separator: ", ")
-        if !argsStr.isEmpty {
-            summary += " with [\(argsStr)]"
-        }
+            var summary = "Called \(toolName)"
+            let argsStr = args.map { "\($0.key)=\($0.value)" }.joined(separator: ", ")
+            if !argsStr.isEmpty { summary += " with [\(argsStr)]" }
 
-        // Add a one-line data summary specific to each tool
-        if let dict = parsed as? [String: Any] {
-            switch toolName {
-            case "get_activity":
-                if let score = dict["score"] as? Int, let totalMins = dict["total_active_minutes"] as? Double {
-                    let apps = (dict["top_apps"] as? [[String: Any]])?
-                        .prefix(5).compactMap { $0["app"] as? String }.joined(separator: ", ") ?? ""
-                    summary += ". Result: score=\(score)/100, \(Int(totalMins))m active, top apps: \(apps)"
+            if let dict = parsed as? [String: Any] {
+                switch toolName {
+                case "get_activity":
+                    if let score = dict["score"] as? Int, let totalMins = dict["total_active_minutes"] as? Double {
+                        let apps = (dict["top_apps"] as? [[String: Any]])?
+                            .prefix(5).compactMap { $0["app"] as? String }.joined(separator: ", ") ?? ""
+                        summary += ". Result: score=\(score)/100, \(Int(totalMins))m active, top apps: \(apps)"
+                    }
+                case "classify_app":
+                    if let appName = dict["app_name"] as? String, let verdict = dict["verdict"] as? String {
+                        summary += ". Result: \(appName)=\(verdict)"
+                    }
+                case "current_time":
+                    if let today = dict["today"] as? String { summary += ". Result: today=\(today)" }
+                case "query_sessions":
+                    if let count = dict["count"] as? Int { summary += ". Result: \(count) sessions" }
+                default:
+                    break
                 }
-            case "classify_app":
-                if let appName = dict["app_name"] as? String, let verdict = dict["verdict"] as? String {
-                    summary += ". Result: \(appName)=\(verdict)"
-                }
-            case "current_time":
-                if let today = dict["today"] as? String {
-                    summary += ". Result: today=\(today)"
-                }
-            case "query_sessions":
-                if let count = dict["count"] as? Int {
-                    summary += ". Result: \(count) sessions"
-                }
-            default:
-                break
             }
+            return summary
         }
-
-        return summary
+        return summaries.joined(separator: "\n")
     }
 }

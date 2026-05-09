@@ -23,18 +23,13 @@ struct OverridesView: View {
     private let store = CategoryStore()
     private let svc = RuleAuthoringService()
     private let dbPool = DatabaseManager.shared.dbPool
-    private let logger = Logger(subsystem: "com.focuslens.app", category: "Overrides")
+    private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "Overrides")
 
     private static let displayDateFormatter: DateFormatter = {
         let f = DateFormatter(); f.dateStyle = .medium; f.timeStyle = .none; return f
     }()
 
-    private static let dbDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-        f.timeZone = TimeZone(identifier: "UTC")!
-        return f
-    }()
+    private static let dbDateFormatter = DateUtils.dbTimestampFormatter()
 
     // MARK: - Body
 

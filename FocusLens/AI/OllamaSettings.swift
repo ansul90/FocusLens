@@ -1,5 +1,11 @@
 import Foundation
 
+enum ModelMatch {
+    case exact
+    case prefix(closest: String)
+    case none
+}
+
 struct OllamaSettings {
     private let defaults: UserDefaults
 
@@ -27,5 +33,22 @@ struct OllamaSettings {
 
     var baseURL: URL {
         URL(string: host) ?? URL(string: AppConstants.Ollama.defaultHost)!
+    }
+
+    /// Matches the configured model name against a list of available model names.
+    /// Tries exact match first; falls back to base-name prefix match.
+    func matchModel(in available: [String]) -> ModelMatch {
+        let configured = modelName.lowercased()
+        let configuredBase = configured.components(separatedBy: ":").first ?? configured
+
+        if available.contains(where: { $0.lowercased() == configured }) {
+            return .exact
+        }
+        if let closest = available.first(where: {
+            ($0.lowercased().components(separatedBy: ":").first ?? $0.lowercased()) == configuredBase
+        }) {
+            return .prefix(closest: closest)
+        }
+        return .none
     }
 }

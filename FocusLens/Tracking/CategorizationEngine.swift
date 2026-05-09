@@ -2,7 +2,7 @@ import Foundation
 import GRDB
 import os
 
-private let logger = Logger(subsystem: "com.focuslens.app", category: "CategorizationEngine")
+private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "CategorizationEngine")
 
 struct CategorizationEngine {
     private let store: CategoryStore
@@ -43,12 +43,7 @@ struct CategorizationEngine {
         return categoryMap[matchedRule.categoryId]
     }
 
-    private static let grdbDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-        f.timeZone = TimeZone(identifier: "UTC")!
-        return f
-    }()
+    private static let grdbDateFormatter = DateUtils.dbTimestampFormatter()
 
     // Categorizes all completed sessions that have no category yet.
     // Returns the number of sessions updated.

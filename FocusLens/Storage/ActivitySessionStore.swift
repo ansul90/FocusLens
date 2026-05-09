@@ -166,9 +166,7 @@ struct ActivitySessionStore: Sendable {
                     """,
                 arguments: [s, e]
             )
-            let fmt = DateFormatter()
-            fmt.dateFormat = "yyyy-MM-dd"
-            fmt.timeZone = Calendar.current.timeZone
+            let fmt = DateUtils.dayFormatter()
             return rows.compactMap { row -> (date: Date, seconds: Double)? in
                 guard let dayStr: String = row["day"],
                       let date = fmt.date(from: dayStr) else { return nil }
@@ -196,9 +194,7 @@ struct ActivitySessionStore: Sendable {
                     """,
                 arguments: [s, e]
             )
-            let fmt = DateFormatter()
-            fmt.dateFormat = "yyyy-MM-dd"
-            fmt.timeZone = Calendar.current.timeZone
+            let fmt = DateUtils.dayFormatter()
             return rows.compactMap { row -> (date: Date, tier: Int, seconds: Double)? in
                 guard let dayStr: String = row["day"],
                       let date = fmt.date(from: dayStr) else { return nil }

@@ -16,7 +16,7 @@ A personal RescueTime alternative built as a native macOS menu bar app, powered 
 | UI | SwiftUI `MenuBarExtra` (`.window` style) | Native Mac, no dock icon (`LSUIElement = YES`), richer than `NSMenu` |
 | Storage | SQLite via GRDB.swift | Local-first, crash-safe WAL mode, migrations, thread-safe `DatabasePool` |
 | Activity capture | `NSWorkspace` notifications + Accessibility API (`AXUIElement`) | Event-driven (not polled), gets window titles |
-| AI | Gemini Flash 2.0 REST API | Post-hoc analysis only, API key stored in macOS Keychain |
+| AI | Gemini Flash 2.0 REST API | Post-hoc analysis only, API key stored in `UserDefaults` (personal use; Keychain was over-engineered for this threat model) |
 | Target | macOS 15+ (Sequoia) | `MenuBarExtra` `.window` style + `SMAppService` + `@Observable` |
 | Concurrency | Swift structured concurrency (async/await, actors) | Safe, modern, avoids data races |
 | Distribution | Direct build, no App Store | Personal use; Accessibility permissions complicate App Store review |
@@ -37,7 +37,7 @@ These are decided. Any change requires explicit renegotiation.
 | Testing framework | Swift Testing (macro-based, `@Test` / `#expect`) |
 | Dependency manager | Swift Package Manager (GRDB added as SPM dependency) |
 | GRDB version | Latest stable 7.x |
-| Gemini key source | Google AI Studio API key, stored in macOS Keychain under service `com.focuslens.app` |
+| Gemini key source | Google AI Studio API key, stored in `UserDefaults` under key `"ai.gemini.apiKey"` (Keychain was original plan; switched to UserDefaults — acceptable for single-user personal tool) |
 | Menu-bar UI pattern | `MenuBarExtra(..., isInserted:)` with `.window` style; root SwiftUI view is `MenuBarView` |
 | Menu-bar icon | SF Symbol `eye` (placeholder; may revisit post-Phase 2) |
 | Menu-bar refresh strategy | **Cached aggregates** — see below |
@@ -247,7 +247,7 @@ See "Locked Technical Choices" above for project-shape decisions. These are the 
 **Prerequisite**: ~1 week of data from Phases 1-2.
 
 **What's in**:
-- `GeminiClient` — thin REST wrapper, API key in Keychain, rate limiting (10 req/min), cost tracking
+- `GeminiClient` — thin REST wrapper, API key in `UserDefaults`, rate limiting (10 req/min), cost tracking
 - Smart categorization — batch uncategorized (app, window_title) pairs to Gemini, constrained to existing categories via response schema. Accept/reject → suggestions become rules (learning loop)
 - Natural language queries — pre-aggregate data in SQLite, send summary to Gemini (NEVER let Gemini generate SQL)
 - Daily digest — auto at 6 PM, macOS notification, compares to 7-day average
@@ -262,7 +262,7 @@ See "Locked Technical Choices" above for project-shape decisions. These are the 
 - [ ] Accept/reject feedback loop persists new rules that match going forward
 - [ ] NL queries return grounded answers (all numbers traceable to SQLite aggregate)
 - [ ] Daily/weekly digests auto-generated on schedule and store in `daily_summaries`
-- [ ] App fully functional when offline: boots with no Keychain key, AI tabs show "Not configured"; no crashes, no retries
+- [ ] App fully functional when offline: boots with no API key in UserDefaults, AI tabs show "Not configured"; no crashes, no retries
 - [ ] Window titles are truncated to ≤ 120 chars and stripped of obvious PII patterns (emails, 16-digit numbers) before being sent to Gemini
 - [ ] Rate limiter refuses silently (no exception) when budget exceeded
 
@@ -385,7 +385,7 @@ eagv3/week2/
     │   └── Utilities/
     │       ├── DateFormatters.swift
     │       ├── DurationFormatter.swift
-    │       └── KeychainHelper.swift        # Phase 3
+    │       └── DateUtils.swift             # DB date formatting helpers
     └── FocusLensTests/                 # Swift Testing target
         ├── ActivityTrackerTests.swift
         ├── IdleDetectorTests.swift

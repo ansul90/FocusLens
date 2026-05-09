@@ -5,8 +5,13 @@ enum Migration003_SeedRules {
     static let identifier = "v3_seed_rules"
 
     static func migrate(_ db: Database) throws {
-        // Replace Migration002's placeholder seeds with accurate bundle IDs.
-        // Clear rules first (FK child), then categories, then re-seed.
+        // Canonical category seeder. This migration is intentionally destructive:
+        // it deletes everything Migration002 created and re-seeds with the correct
+        // bundle IDs and category taxonomy. The DELETE statements are safe no-ops
+        // on a fresh install (Migration002 now seeds nothing) and serve their
+        // purpose for any database that ran an older version of Migration002.
+        // If this app is ever distributed, a first-run guard should warn users
+        // before this migration runs on a database with user-customised categories.
         try db.execute(sql: "DELETE FROM category_rules")
         try db.execute(sql: "DELETE FROM categories")
         // Reset any sessions that pointed to the old category IDs.

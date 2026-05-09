@@ -72,7 +72,7 @@ struct FocusLensApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("FocusLens", systemImage: "eye") {
+        MenuBarExtra("FocusLens", systemImage: aggregate.isPaused ? "eye.slash" : "eye") {
             MenuBarView(aggregate: aggregate, tracker: tracker)
         }
         .menuBarExtraStyle(.window)

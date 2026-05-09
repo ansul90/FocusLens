@@ -244,12 +244,14 @@ struct AISettingsView: View {
             let client = OllamaClient(settings: snapshot)
             do {
                 let models = try await client.availableModels()
-                let model = snapshot.modelName
-                if models.contains(where: { $0.lowercased().hasPrefix(model.split(separator: ":").first.map(String.init)?.lowercased() ?? model) }) {
-                    ollamaTestStatus = .success("Connected · \(model) available")
-                } else {
+                switch snapshot.matchModel(in: models) {
+                case .exact:
+                    ollamaTestStatus = .success("Connected · \(snapshot.modelName) available")
+                case .prefix(let closest):
+                    ollamaTestStatus = .success("Connected · '\(snapshot.modelName)' matched as '\(closest)'")
+                case .none:
                     let list = models.prefix(3).joined(separator: ", ")
-                    ollamaTestStatus = .failure("Model '\(model)' not found. Installed: \(list.isEmpty ? "(none)" : list)")
+                    ollamaTestStatus = .failure("Model '\(snapshot.modelName)' not found. Installed: \(list.isEmpty ? "(none)" : list)")
                 }
             } catch OllamaError.unreachable {
                 ollamaTestStatus = .failure("Ollama not reachable. Run: ollama serve")

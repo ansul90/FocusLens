@@ -33,7 +33,7 @@ struct CategorySettingsView: View {
 
     private let store = CategoryStore()
     private let svc = RuleAuthoringService()
-    private let logger = Logger(subsystem: "com.focuslens.app", category: "CategorySettings")
+    private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "CategorySettings")
 
     // MARK: - Body
 

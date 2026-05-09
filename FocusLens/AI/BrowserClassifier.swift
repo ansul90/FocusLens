@@ -21,7 +21,7 @@ struct BrowserClassifier {
     private let client: any GeminiClassifying
     private let categoryStore: CategoryStore
     private let dbPool: DatabasePool
-    private let logger = Logger(subsystem: "com.focuslens.app", category: "BrowserClassifier")
+    private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "BrowserClassifier")
 
     init(
         client: any GeminiClassifying = GeminiClient(),

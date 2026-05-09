@@ -64,10 +64,14 @@ actor OllamaClient {
             let (data, response) = try await session.data(for: req)
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return false }
             let tags = try JSONDecoder().decode(OllamaTagsResponse.self, from: data)
-            let configuredBase = settings.modelName.lowercased().components(separatedBy: ":").first ?? settings.modelName.lowercased()
-            return tags.models.contains { entry in
-                let entryBase = entry.name.lowercased().components(separatedBy: ":").first ?? entry.name.lowercased()
-                return entryBase == configuredBase
+            switch settings.matchModel(in: tags.models.map(\.name)) {
+            case .exact:
+                return true
+            case .prefix(let closest):
+                logger.warning("OllamaClient: exact model '\(self.settings.modelName)' not found; using closest match '\(closest)'")
+                return true
+            case .none:
+                return false
             }
         } catch {
             return false

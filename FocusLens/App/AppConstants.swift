@@ -19,7 +19,9 @@ enum AppConstants {
     ]
 
     static let appSupportDirectory: URL = {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        guard let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            fatalError("Could not resolve Application Support directory — cannot launch FocusLens")
+        }
         return base.appendingPathComponent("FocusLens", isDirectory: true)
     }()
 
@@ -50,13 +52,18 @@ enum AppConstants {
 
     enum Agent {
         static let maxIterations: Int = 15
-        static let toolResultMaxChars: Int = 4000
+        // num_ctx = 8192 tokens ≈ 32 KB; budget: system prompt + history + ≤4 tool results × 2000 chars
+        static let toolResultMaxChars: Int = 2000
+        static let fileLogEnabled: Bool = false
+        static let logFileSizeCapBytes: Int = 1_048_576  // 1 MB
     }
 
     enum MCP {
         static let defaultUvPath: String = "\(NSHomeDirectory())/.local/bin/uv"
         static let defaultServerDirectory: String = {
-            let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+                fatalError("Could not resolve Application Support directory — cannot launch FocusLens")
+            }
             return appSupport.appendingPathComponent("FocusLens/mcp").path
         }()
         static let serverScript: String = "server.py"

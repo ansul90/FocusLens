@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import os
 
 @MainActor
 final class ActivityTracker {
@@ -16,6 +17,7 @@ final class ActivityTracker {
     private let idleDetector: IdleDetector
     private let permissionManager: PermissionManager
     private var isStarted: Bool = false
+    private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "ActivityTracker")
 
     init(
         store: ActivitySessionStore = .init(),
@@ -64,15 +66,29 @@ final class ActivityTracker {
 
     private func recoverOpenSessions() async {
         let now = Date()
-        guard let openSessions = try? store.fetchOpenSessions() else { return }
+        let openSessions: [ActivitySession]
+        do {
+            openSessions = try store.fetchOpenSessions()
+        } catch {
+            logger.error("ActivityTracker: failed to fetch open sessions for recovery: \(error)")
+            return
+        }
         for session in openSessions {
             guard let id = session.id else { continue }
             let closeAt = min(now, session.startedAt.addingTimeInterval(AppConstants.maxReasonableSessionSeconds))
             let duration = closeAt.timeIntervalSince(session.startedAt)
             if duration < AppConstants.minimumSessionSeconds {
-                try? store.delete(id: id)
+                do {
+                    try store.delete(id: id)
+                } catch {
+                    logger.error("ActivityTracker: failed to delete short recovered session \(id): \(error)")
+                }
             } else {
-                try? store.close(id: id, at: closeAt)
+                do {
+                    try store.close(id: id, at: closeAt)
+                } catch {
+                    logger.error("ActivityTracker: failed to close recovered session \(id): \(error)")
+                }
             }
         }
     }
@@ -137,12 +153,20 @@ final class ActivityTracker {
               let app = currentApp,
               !session.isIdle else { return }
         guard let title = PermissionManager.windowTitle(for: app), !title.isEmpty else { return }
-        try? store.updateWindowTitle(id: id, windowTitle: title)
+        do {
+            try store.updateWindowTitle(id: id, windowTitle: title)
+        } catch {
+            logger.error("ActivityTracker: failed to update window title for session \(id): \(error)")
+        }
     }
 
     private func openSession(for app: NSRunningApplication) async {
         guard let bundleId = app.bundleIdentifier else { return }
-        guard (try? neverTrackStore.contains(bundleId: bundleId)) != true else { return }
+        do {
+            if try neverTrackStore.contains(bundleId: bundleId) { return }
+        } catch {
+            logger.error("ActivityTracker: failed to check never-track list for \(bundleId): \(error)")
+        }
 
         currentApp = app
         let windowTitle = PermissionManager.windowTitle(for: app)
@@ -158,14 +182,22 @@ final class ActivityTracker {
             isIdle: false,
             categoryId: nil
         )
-        currentSession = try? store.insert(session)
+        do {
+            currentSession = try store.insert(session)
+        } catch {
+            logger.error("ActivityTracker: failed to insert session for \(name): \(error)")
+        }
         currentAppName = name
         onStateChanged?(currentAppName, isPaused)
     }
 
     private func openIdleSession(for app: NSRunningApplication) async {
         guard let bundleId = app.bundleIdentifier else { return }
-        guard (try? neverTrackStore.contains(bundleId: bundleId)) != true else { return }
+        do {
+            if try neverTrackStore.contains(bundleId: bundleId) { return }
+        } catch {
+            logger.error("ActivityTracker: failed to check never-track list for \(bundleId) (idle): \(error)")
+        }
 
         let name = app.localizedName ?? bundleId
         let session = ActivitySession(
@@ -179,7 +211,11 @@ final class ActivityTracker {
             isIdle: true,
             categoryId: nil
         )
-        currentSession = try? store.insert(session)
+        do {
+            currentSession = try store.insert(session)
+        } catch {
+            logger.error("ActivityTracker: failed to insert idle session for \(name): \(error)")
+        }
         currentAppName = name
         onStateChanged?(currentAppName, isPaused)
     }
@@ -196,13 +232,29 @@ final class ActivityTracker {
             let lower = t.lowercased()
             return AppConstants.noisyWindowTitlePrefixes.contains { lower.hasPrefix($0) }
         } ?? false
-        let isNeverTrackedTitle = finalTitle.map { t in
-            (try? neverTrackStore.containsTitle(bundleId: session.appBundleId, title: t)) == true
-        } ?? false
-        if duration < AppConstants.minimumSessionSeconds || isNoisy || isNeverTrackedTitle {
-            try? store.delete(id: id)
+        let isNeverTrackedTitle: Bool
+        if let t = finalTitle {
+            do {
+                isNeverTrackedTitle = try neverTrackStore.containsTitle(bundleId: session.appBundleId, title: t)
+            } catch {
+                logger.error("ActivityTracker: failed to check never-track title for \(session.appBundleId): \(error)")
+                isNeverTrackedTitle = false
+            }
         } else {
-            try? store.close(id: id, at: now, windowTitle: finalTitle)
+            isNeverTrackedTitle = false
+        }
+        if duration < AppConstants.minimumSessionSeconds || isNoisy || isNeverTrackedTitle {
+            do {
+                try store.delete(id: id)
+            } catch {
+                logger.error("ActivityTracker: failed to delete short/noisy session \(id): \(error)")
+            }
+        } else {
+            do {
+                try store.close(id: id, at: now, windowTitle: finalTitle)
+            } catch {
+                logger.error("ActivityTracker: failed to close session \(id): \(error)")
+            }
         }
         onSessionEnded?()
     }

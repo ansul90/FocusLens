@@ -29,12 +29,7 @@ struct SessionBrowserView: View {
 
     private static let resolvedRowLimit = 20
 
-    private static let dbDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-        f.timeZone = TimeZone(identifier: "UTC")!
-        return f
-    }()
+    private static let dbDateFormatter = DateUtils.dbTimestampFormatter()
 
     private static let resolvedDateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -71,7 +66,7 @@ struct SessionBrowserView: View {
     private let ignoredStore = IgnoredTitleStore()
     private let neverTrackStore = NeverTrackStore()
     private let dbPool = DatabaseManager.shared.dbPool
-    private let logger = Logger(subsystem: "com.focuslens.app", category: "SessionBrowser")
+    private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "SessionBrowser")
 
     // MARK: - Filtered data
 

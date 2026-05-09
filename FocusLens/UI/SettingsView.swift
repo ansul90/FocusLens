@@ -32,7 +32,7 @@ struct NeverTrackTab: View {
     @State private var store = NeverTrackStore()
     @State private var errorMessage: String?
 
-    private let logger = Logger(subsystem: "com.focuslens.app", category: "NeverTrack")
+    private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "NeverTrack")
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

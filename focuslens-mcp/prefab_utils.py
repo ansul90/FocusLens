@@ -7,3 +7,9 @@ TIER_VARIANT: dict[int, str] = {
     -1: "warning",
     -2: "destructive",
 }
+
+VERDICT_VARIANT: dict[str, str] = {
+    "productive":   "success",
+    "neutral":      "secondary",
+    "distracting":  "destructive",
+}

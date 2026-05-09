@@ -79,7 +79,6 @@ actor AgentRunner {
         var nudgedToAnswer = false
 
         let logFile = AgentLogger(query: userQuery)
-        logFile.write("Query: \(userQuery)\n")
 
         for iteration in 0..<AppConstants.Agent.maxIterations {
             logger.debug("AgentRunner: iteration \(iteration + 1)/\(AppConstants.Agent.maxIterations)")
@@ -277,21 +276,29 @@ extension AgentRunner {
 
 // MARK: - Agent Logger
 
-/// Writes a human-readable LLM interaction log to ~/Desktop/focuslens-agent-log.txt.
-/// Each query appends a new section so the file accumulates all demo runs.
+/// Writes a human-readable LLM interaction log to ~/Library/Logs/FocusLens/agent.log.
+/// Disabled by default — enable via AppConstants.Agent.fileLogEnabled.
+/// Truncates to the last half when the file exceeds AppConstants.Agent.logFileSizeCapBytes.
 final class AgentLogger: @unchecked Sendable {
     private let path: String
 
     init(query: String) {
-        let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
-        path = desktop.appendingPathComponent("focuslens-agent-log.txt").path
+        let base = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        let logsDir = base.appendingPathComponent("Logs/FocusLens", isDirectory: true)
+        path = logsDir.appendingPathComponent("agent.log").path
+
+        guard AppConstants.Agent.fileLogEnabled else { return }
+        try? FileManager.default.createDirectory(at: logsDir, withIntermediateDirectories: true)
+        capFileIfNeeded()
 
         let separator = "\n" + String(repeating: "─", count: 60) + "\n"
         let timestamp = ISO8601DateFormatter().string(from: Date())
-        write(separator + "[\(timestamp)]\n")
+        write(separator + "[\(timestamp)] Query: \(query)\n")
     }
 
     func write(_ text: String) {
+        guard AppConstants.Agent.fileLogEnabled else { return }
         guard let data = text.data(using: .utf8) else { return }
         if FileManager.default.fileExists(atPath: path),
            let handle = FileHandle(forWritingAtPath: path) {
@@ -301,5 +308,16 @@ final class AgentLogger: @unchecked Sendable {
         } else {
             FileManager.default.createFile(atPath: path, contents: data)
         }
+    }
+
+    private func capFileIfNeeded() {
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: path),
+              let size = attrs[.size] as? Int,
+              size > AppConstants.Agent.logFileSizeCapBytes,
+              let handle = FileHandle(forReadingAtPath: path) else { return }
+        handle.seek(toFileOffset: UInt64(size / 2))
+        let tail = handle.readDataToEndOfFile()
+        handle.closeFile()
+        FileManager.default.createFile(atPath: path, contents: tail)
     }
 }

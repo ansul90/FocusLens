@@ -201,7 +201,7 @@ xcodebuild test \
   -destination 'platform=macOS,arch=arm64'
 ```
 
-79 tests across 12 suites covering the tracker, idle detector, categorisation engine, Gemini client, prompt builder, category mapper, browser classifier, Ollama client, response parser, and agent runner.
+96 tests across 14 suites covering the tracker, idle detector, categorisation engine, Gemini client, prompt builder, category mapper, browser classifier, Ollama client, response parser, agent runner, rule authoring service, and DB migrations.
 
 ---
 
@@ -246,7 +246,7 @@ FocusLens/
 │       ├── ResponseParser.swift    # Forgiving JSON parser for local models
 │       ├── SystemPrompt.swift      # Dynamic system prompt builder
 │       └── Tools/
-│           └── AgentTools.swift    # 7 SQL-backed tools
+│           └── AgentTools.swift    # 4 SQL-backed tools
 ├── UI/
 │   ├── MenuBarView.swift
 │   ├── TodayAggregate.swift        # @Observable state, async DB refresh
@@ -258,10 +258,10 @@ FocusLens/
 │   ├── AskFocusLensView.swift      # Chat UI with trace inspector
 │   └── AskViewModel.swift          # @Observable state for the agent chat
 └── Utilities/
-    ├── DateFormatters.swift
+    ├── DateUtils.swift
     └── DurationFormatter.swift
 
-FocusLensTests/                     # Swift Testing suite
+FocusLensTests/                     # Swift Testing suite (96 tests, 14 suites)
 ├── ActivityTrackerTests.swift
 ├── IdleDetectorTests.swift
 ├── DurationFormatterTests.swift
@@ -272,7 +272,10 @@ FocusLensTests/                     # Swift Testing suite
 ├── BrowserClassifierTests.swift
 ├── OllamaClientTests.swift
 ├── ResponseParserTests.swift
-└── AgentRunnerTests.swift
+├── AgentRunnerTests.swift
+├── RuleAuthoringServiceTests.swift
+├── Migration007Tests.swift
+└── Migration008Tests.swift
 ```
 
 **Database**: `~/Library/Application Support/FocusLens/focuslens.db`
@@ -302,185 +305,5 @@ All data is stored locally in `~/Library/Application Support/FocusLens/`.
 
 - **Ask FocusLens** runs entirely via Ollama on your machine — no data leaves your machine.
 - **Gemini browser classification** sends only browser window titles to Google's Gemini API, and only when you have configured a Gemini API key and click Reclassify Now.
-
-App Sandbox is disabled (required for Accessibility API access). Hardened Runtime is enabled.
-
----
-
-## Features
-
-### Activity Tracking
-- Monitors app switches and window titles via the macOS Accessibility API
-- Detects idle time (default: 10 minutes) and excludes it from tracked time
-- Discards sessions shorter than 60 seconds (configurable in `AppConstants.swift`)
-- Persists sessions locally in SQLite — no data leaves your machine
-- Recovers gracefully after sleep/wake and crashes (WAL mode + open-session recovery on relaunch)
-- Launches at login via `SMAppService`
-
-### Menu Bar Popover
-- Shows the currently active app and today's total tracked time
-- Top 5 apps ranked by duration with an "Open Dashboard" link for full details
-- Icon toolbar: Dashboard · Settings · Pause/Resume · Quit
-
-### Dashboard
-- **Date picker** — navigate any past day with `<` / `>` arrows or a compact date picker
-- **Productivity score** — weighted average of session tiers mapped to 0–100
-- **Category breakdown** — horizontal bar chart by category
-- **Top apps** — ranked by time spent
-- **Hourly timeline** — colour-coded by productivity tier (Swift Charts)
-
-### Rule-Based Categorisation
-- Matches sessions by app bundle ID, window title substring, or regex
-- 9 built-in categories seeded at first launch (Development, Dev Tools, AI Tools, Notes & PKM, Communication, Office, Browser, Media, Utilities)
-- Each category carries a productivity tier from −2 (very distracting) to +2 (very productive)
-- Batch recategorisation of uncategorised sessions runs automatically on app launch and after each session ends
-
-### AI-Powered Browser Classification (Gemini)
-Browsers capture the page title for every session. FocusLens sends these titles to Gemini and reclassifies sessions that were generically tagged as "Browser" into specific categories (Development, News, Entertainment, etc.).
-
-- Model: `gemini-2.5-flash`
-- Batches up to 25 sessions per request
-- **Automatic background loop** runs every 30 minutes when Gemini is enabled
-- **Reclassify Now** button in Settings for on-demand re-processing
-- Prompt injection defence: page titles are treated as data only; responses validated against an allow-list
-
-#### When Gemini is called
-
-| Trigger | Behaviour |
-|---|---|
-| **Background loop** | Runs every 30 minutes (`reclassifyIntervalSeconds = 1800`) while Gemini is configured — classifies all pending "Browser" sessions |
-| **Reclassify Now button** | On-demand from the AI settings tab — same logic, triggered manually |
-
-### Settings
-- **General** — displays current idle threshold and minimum session length (compile-time constants)
-- **Categories** — create, edit, delete categories and assign match rules
-- **Never Track** — manage the list of apps excluded from tracking entirely
-- **AI** — enter Gemini API key, enable/disable classification, test connection, reclassify now
-
----
-
-## Requirements
-
-- macOS 15 (Sequoia) or later
-- Xcode 16 or later
-- Accessibility permission (prompted on first launch)
-- Gemini API key (optional — only required for AI browser classification)
-
----
-
-## Getting Started
-
-```bash
-git clone <repo-url>
-cd FocusLens
-open FocusLens.xcodeproj
-```
-
-Press **⌘R** in Xcode to build and run. The app appears in the menu bar (no Dock icon). On first launch, macOS will prompt for Accessibility permission — this is required for window title tracking.
-
-### Command-line build
-
-```bash
-xcodebuild build \
-  -project FocusLens.xcodeproj \
-  -scheme FocusLens \
-  -destination 'platform=macOS,arch=arm64' \
-  -configuration Release
-```
-
----
-
-## Running Tests
-
-```bash
-xcodebuild test \
-  -project FocusLens.xcodeproj \
-  -scheme FocusLens \
-  -destination 'platform=macOS,arch=arm64'
-```
-
-53 tests across 9 suites covering the tracker, idle detector, categorisation engine, Gemini client, prompt builder, category mapper, browser classifier, and duration formatter.
-
----
-
-## Project Structure
-
-```
-FocusLens/
-├── App/
-│   ├── FocusLensApp.swift          # @main entry, MenuBarExtra, window declarations
-│   ├── AppConstants.swift          # Thresholds, DB path, AI endpoint constants
-│   └── LoginItemManager.swift      # SMAppService launch-at-login
-├── Models/
-│   ├── ActivitySession.swift
-│   ├── Category.swift
-│   └── CategoryRule.swift
-├── Storage/
-│   ├── DatabaseManager.swift       # GRDB pool + migration runner
-│   ├── ActivitySessionStore.swift  # Session queries (parameterised by date)
-│   ├── CategoryStore.swift
-│   ├── NeverTrackStore.swift
-│   └── Migrations/
-│       ├── Migration001_Sessions.swift
-│       ├── Migration002_Categories.swift
-│       ├── Migration003_SeedRules.swift
-│       └── Migration004_FixAITools.swift
-├── Tracking/
-│   ├── ActivityTracker.swift       # Core Swift actor, session lifecycle
-│   ├── IdleDetector.swift
-│   ├── PermissionManager.swift
-│   └── CategorizationEngine.swift
-├── AI/
-│   ├── GeminiClient.swift          # REST actor with typed request/response
-│   ├── GeminiPrompt.swift          # Prompt builder, request/response types
-│   ├── GeminiSettings.swift        # UserDefaults-backed API key + enabled flag
-│   ├── BrowserClassifier.swift     # Orchestrates batch classification
-│   ├── BrowserCategoryMapper.swift # Maps Gemini labels → DB category IDs
-├── UI/
-│   ├── MenuBarView.swift
-│   ├── TodayAggregate.swift        # @Observable state, async DB refresh
-│   ├── DashboardView.swift
-│   ├── DashboardCharts.swift       # Gauge, tier bar, category rows, hourly chart
-│   ├── SettingsView.swift
-│   ├── CategorySettingsView.swift
-│   └── AISettingsView.swift
-└── Utilities/
-    ├── DateFormatters.swift
-    └── DurationFormatter.swift
-
-FocusLensTests/                     # Swift Testing suite
-├── ActivityTrackerTests.swift
-├── IdleDetectorTests.swift
-├── DurationFormatterTests.swift
-├── CategorizationEngineTests.swift
-├── GeminiPromptTests.swift
-├── BrowserCategoryMapperTests.swift
-├── GeminiClientTests.swift
-└── BrowserClassifierTests.swift
-```
-
-**Database**: `~/Library/Application Support/FocusLens/focuslens.db`
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Language | Swift 5, SwiftUI |
-| Minimum OS | macOS 15 |
-| Database | SQLite via [GRDB.swift](https://github.com/groue/GRDB.swift) 7.x |
-| Charts | Swift Charts |
-| State management | `@Observable` (Observation framework) |
-| Concurrency | Swift actors, `async`/`await`, `Task.detached` |
-| AI | Google Gemini API (REST, no SDK) |
-| Tests | Swift Testing (`@Test`, `#expect`) |
-| System APIs | NSWorkspace, AXUIElement, CGEventSource, SMAppService |
-
----
-
-## Privacy
-
-All data is stored locally in `~/Library/Application Support/FocusLens/`. Nothing is sent to any server unless you configure a Gemini API key, in which case only browser window titles are sent to Google's Gemini API for classification.
 
 App Sandbox is disabled (required for Accessibility API access). Hardened Runtime is enabled.

@@ -3,7 +3,7 @@ import os
 
 struct BrowserCategoryMapper {
     private let categories: [Category]
-    private let logger = Logger(subsystem: "com.focuslens.app", category: "BrowserCategoryMapper")
+    private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "BrowserCategoryMapper")
 
     init(existing categories: [Category]) {
         self.categories = categories

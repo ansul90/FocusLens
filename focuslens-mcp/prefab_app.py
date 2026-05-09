@@ -34,13 +34,7 @@ from prefab_ui.components import (
 
 import db
 import insights as insights_mod
-from prefab_utils import TIER_VARIANT
-
-VERDICT_VARIANT: dict[str, str] = {
-    "productive":   "success",
-    "neutral":      "secondary",
-    "distracting":  "destructive",
-}
+from prefab_utils import TIER_VARIANT, VERDICT_VARIANT
 
 
 def _score_sentiment(score: int) -> tuple[str, str]:

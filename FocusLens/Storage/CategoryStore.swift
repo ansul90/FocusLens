@@ -20,6 +20,7 @@ struct CategoryStore: Sendable {
         }
     }
 
+    @discardableResult
     func insert(_ category: Category) throws -> Category {
         var mutable = category
         try dbPool.write { db in try mutable.insert(db) }
@@ -54,6 +55,7 @@ struct CategoryStore: Sendable {
         }
     }
 
+    @discardableResult
     func insert(_ rule: CategoryRule) throws -> CategoryRule {
         var mutable = rule
         try dbPool.write { db in try mutable.insert(db) }

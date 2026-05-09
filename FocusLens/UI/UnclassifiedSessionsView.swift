@@ -83,7 +83,7 @@ struct UnclassifiedSessionsView: View {
     private let store = CategoryStore()
     private let svc = RuleAuthoringService()
     private let dbPool = DatabaseManager.shared.dbPool
-    private let logger = Logger(subsystem: "com.focuslens.app", category: "Unclassified")
+    private let logger = Logger(subsystem: AppConstants.bundleIdentifier, category: "Unclassified")
 
     var body: some View {
         VStack(spacing: 0) {

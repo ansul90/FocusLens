@@ -26,5 +26,7 @@
 	<string>Copyright © 2026 Ansul Gupta. All rights reserved.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSAccessibilityUsageDescription</key>
+	<string>FocusLens reads the active window title to categorise your activity. No window contents are accessed.</string>
 </dict>
 </plist>
