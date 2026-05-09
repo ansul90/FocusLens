@@ -341,4 +341,13 @@ extension Color {
         }
         self.init(red: r, green: g, blue: b)
     }
+
+    /// Returns "#RRGGBB" hex string (sRGB, no alpha).
+    var hexString: String {
+        guard let srgb = NSColor(self).usingColorSpace(.sRGB) else { return "#000000" }
+        let r = Int(round(srgb.redComponent * 255))
+        let g = Int(round(srgb.greenComponent * 255))
+        let b = Int(round(srgb.blueComponent * 255))
+        return String(format: "#%02X%02X%02X", r, g, b)
+    }
 }

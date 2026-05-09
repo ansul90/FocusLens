@@ -27,6 +27,7 @@ struct GeneralSettingsTab: View {
 
 struct NeverTrackTab: View {
     @State private var bundleIds: [String] = []
+    @State private var titleEntries: [(appBundleId: String, windowTitle: String)] = []
     @State private var newBundleId = ""
     @State private var store = NeverTrackStore()
     @State private var errorMessage: String?
@@ -34,26 +35,59 @@ struct NeverTrackTab: View {
     private let logger = Logger(subsystem: "com.focuslens.app", category: "NeverTrack")
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             List {
-                ForEach(bundleIds, id: \.self) { bundleId in
-                    Text(bundleId)
+                Section {
+                    ForEach(bundleIds, id: \.self) { bundleId in
+                        Text(bundleId)
+                            .font(.callout)
+                    }
+                    .onDelete { offsets in
+                        for i in offsets {
+                            do { try store.remove(bundleId: bundleIds[i]) }
+                            catch { errorMessage = error.localizedDescription }
+                        }
+                        load()
+                    }
+                } header: {
+                    Text("APPS")
                 }
-                .onDelete { offsets in
-                    for i in offsets {
-                        do {
-                            try store.remove(bundleId: bundleIds[i])
-                        } catch {
-                            errorMessage = "Failed to remove bundle ID: \(error.localizedDescription)"
+
+                Section {
+                    if titleEntries.isEmpty {
+                        Text("No titles blocked yet — use \"Never Track\" in Session Browser.")
+                            .font(.callout)
+                            .foregroundStyle(.tertiary)
+                    } else {
+                        ForEach(Array(titleEntries.enumerated()), id: \.offset) { _, entry in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(entry.windowTitle)
+                                    .font(.callout)
+                                    .lineLimit(2)
+                                Text(entry.appBundleId)
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        .onDelete { offsets in
+                            for i in offsets {
+                                let entry = titleEntries[i]
+                                do { try store.removeTitle(bundleId: entry.appBundleId, title: entry.windowTitle) }
+                                catch { errorMessage = error.localizedDescription }
+                            }
+                            load()
                         }
                     }
-                    load()
+                } header: {
+                    Text("TITLES")
                 }
             }
+            .listStyle(.inset)
+
             HStack {
                 TextField("com.example.App", text: $newBundleId)
                     .textFieldStyle(.roundedBorder)
-                Button("Add") {
+                Button("Add App") {
                     let trimmed = newBundleId.trimmingCharacters(in: .whitespaces)
                     guard !trimmed.isEmpty else { return }
                     do {
@@ -61,13 +95,13 @@ struct NeverTrackTab: View {
                         newBundleId = ""
                         load()
                     } catch {
-                        errorMessage = "Failed to add bundle ID: \(error.localizedDescription)"
+                        errorMessage = error.localizedDescription
                     }
                 }
                 .disabled(newBundleId.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             .padding(.horizontal)
-            .padding(.bottom, 8)
+            .padding(.vertical, 8)
         }
         .onAppear { load() }
         .alert("Error", isPresented: Binding(
@@ -83,9 +117,9 @@ struct NeverTrackTab: View {
     private func load() {
         do {
             bundleIds = try store.fetchAll()
+            titleEntries = try store.fetchAllTitles()
         } catch {
             logger.error("Failed to load never-track list: \(error.localizedDescription)")
-            bundleIds = []
         }
     }
 }

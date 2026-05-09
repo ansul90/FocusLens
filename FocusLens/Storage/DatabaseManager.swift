@@ -31,6 +31,10 @@ final class DatabaseManager: @unchecked Sendable {
             migrator.registerMigration(Migration004_FixAITools.identifier, migrate: Migration004_FixAITools.migrate)
             migrator.registerMigration(Migration005_FixBrowserRules.identifier, migrate: Migration005_FixBrowserRules.migrate)
             migrator.registerMigration(Migration006_WindowTitleIndex.identifier, migrate: Migration006_WindowTitleIndex.migrate)
+            migrator.registerMigration(Migration007_ConsolidateCategories.identifier, migrate: Migration007_ConsolidateCategories.migrate)
+            migrator.registerMigration(Migration008_CategoryOverrides.identifier, migrate: Migration008_CategoryOverrides.migrate)
+            migrator.registerMigration(Migration009_BumpLearningScore.identifier, migrate: Migration009_BumpLearningScore.migrate)
+            migrator.registerMigration(Migration010_NeverTrackTitlesAndIgnored.identifier, migrate: Migration010_NeverTrackTitlesAndIgnored.migrate)
             try migrator.migrate(pool)
             try pool.write { try $0.execute(sql: "PRAGMA journal_mode=WAL") }
             dbPool = pool

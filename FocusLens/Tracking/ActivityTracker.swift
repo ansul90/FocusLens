@@ -196,7 +196,10 @@ final class ActivityTracker {
             let lower = t.lowercased()
             return AppConstants.noisyWindowTitlePrefixes.contains { lower.hasPrefix($0) }
         } ?? false
-        if duration < AppConstants.minimumSessionSeconds || isNoisy {
+        let isNeverTrackedTitle = finalTitle.map { t in
+            (try? neverTrackStore.containsTitle(bundleId: session.appBundleId, title: t)) == true
+        } ?? false
+        if duration < AppConstants.minimumSessionSeconds || isNoisy || isNeverTrackedTitle {
             try? store.delete(id: id)
         } else {
             try? store.close(id: id, at: now, windowTitle: finalTitle)

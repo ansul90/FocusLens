@@ -1,8 +1,8 @@
 # focuslens-mcp
 
 A Python project that augments [FocusLens](../FocusLens) with eight MCP tools
-driven by a local Ollama agent. The agent reads your top apps from FocusLens's
-SQLite DB, looks up unfamiliar apps on the web, saves verdicts to the same DB,
+driven by a local Ollama agent. The agent reads your activity data from FocusLens's
+SQLite DB, generates plain-English day summaries, saves verdicts to the same DB,
 and renders an interactive Prefab dashboard in your browser.
 
 ```
@@ -27,7 +27,7 @@ and renders an interactive Prefab dashboard in your browser.
 │     ├─ get_productivity_score  (data)   │
 │     ├─ get_category_breakdown  (data)   │
 │     ├─ get_hourly_breakdown    (data)   │
-│     ├─ web_lookup_app          (DDG)    │
+│     ├─ summarize_day           (Ollama) │
 │     ├─ insights_store          (CRUD)   │
 │     ├─ render_report           (UI)     │
 │     └─ show_dashboard          (UI)     │
@@ -58,11 +58,11 @@ You also need FocusLens to have run at least once (so `focuslens.db` exists).
 ## Running
 
 ```bash
-# default demo prompt (researches top apps, shows dashboard)
+# default demo prompt (summarizes last 3 days, shows dashboard)
 uv run python host.py
 
 # custom prompt
-uv run python host.py "Look at my top 5 apps this week and tag any that aren't already verdicted."
+uv run python host.py "Summarize yesterday for me."
 
 # custom report prompt
 uv run python host.py "Compare my productivity scores for the last 3 days and show a chart."
@@ -96,7 +96,7 @@ When the agent calls `render_report`, the host opens an ephemeral page at
 
 | Tool | What it does |
 |---|---|
-| `web_lookup_app(query, max_results)` | DuckDuckGo search + page summary fetch. No API key. |
+| `summarize_day(date)` | Generates a 2-3 paragraph plain-English narrative of a single day via local Ollama. Returns stats + narrative; degrades gracefully if Ollama is unreachable. |
 | `insights_store(operation, ...)` | CRUD on the `app_insights` table inside `focuslens.db`. Operations: `list`, `get`, `upsert`, `delete`. |
 
 ### UI tools
@@ -120,7 +120,7 @@ When the agent calls `render_report`, the host opens an ephemeral page at
 ```
 focuslens-mcp/
 ├── pyproject.toml      # uv-managed deps
-├── server.py           # FastMCP STDIO server — 8 tools
+├── server.py           # FastMCP STDIO server — 8 tools (4 data, summarize_day, insights_store, render_report, show_dashboard)
 ├── host.py             # Ollama agent loop + MCP client + browser opener (CLI)
 ├── web_server.py       # FastAPI/uvicorn dashboard server on localhost:8765
 ├── prefab_app.py       # interactive dashboard layout (show_dashboard)
@@ -128,5 +128,5 @@ focuslens-mcp/
 ├── report_spec.py      # Pydantic schema for render_report sections
 ├── db.py               # read-only SQLite helpers (sessions, scores, hourly)
 ├── insights.py         # CRUD helpers for app_insights table in focuslens.db
-└── web.py              # DuckDuckGo + page-summary fetcher
+└── summarize.py        # Ollama-backed narrative generator for summarize_day
 ```

@@ -2,6 +2,7 @@ import Testing
 @testable import FocusLens
 
 @Suite("IdleDetector")
+@MainActor
 struct IdleDetectorTests {
     @Test("starts not idle")
     func startsNotIdle() {

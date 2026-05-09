@@ -141,12 +141,12 @@ struct AISettingsView: View {
                     .foregroundStyle(directoryExists ? Color.green : Color.red)
                 Text(directoryExists
                      ? "server.py found at \(resolvedServerDirectory)"
-                     : "Directory not found — Ask FocusLens cannot use render_report")
+                     : "Directory not found — Ask FocusLens cannot use render_report or summarize_day")
                     .font(.caption)
                     .foregroundStyle(directoryExists ? Color.secondary : Color.red)
             }
         } header: {
-            Label("MCP server (render_report)", systemImage: "server.rack")
+            Label("MCP server (render_report, summarize_day)", systemImage: "server.rack")
         } footer: {
             Text("Point this at your focuslens-mcp directory. Leave blank to use the default App Support path.")
                 .font(.caption)
@@ -265,7 +265,13 @@ struct AISettingsView: View {
         Task { @MainActor in
             do {
                 let client = GeminiClient(settings: snapshot)
-                _ = try await client.classify(GeminiBatchRequest(items: [.init(id: 0, title: "GitHub")]))
+                let allowed = (try? CategoryStore().fetchAllCategories().compactMap {
+                    $0.id != nil ? $0.name : nil
+                }) ?? []
+                _ = try await client.classify(
+                    GeminiBatchRequest(items: [.init(id: 0, title: "GitHub")]),
+                    allowedCategories: allowed
+                )
                 connectionStatus = .success
             } catch {
                 connectionStatus = .failure(humanReadable(error))

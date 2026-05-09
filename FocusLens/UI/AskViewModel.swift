@@ -60,12 +60,13 @@ final class AskViewModel {
         do {
             try await MCPClient.shared.start()
             let tools = await MCPClient.shared.agentTools()
-            // Only register render_report from MCP — the data tools are covered natively.
-            let filtered = tools.filter { $0.name == "render_report" }
+            // Data tools are covered natively; only register UI/narrative MCP tools.
+            let mcpToolNames: Set<String> = ["render_report", "summarize_day"]
+            let filtered = tools.filter { mcpToolNames.contains($0.name) }
             for tool in filtered {
                 await runner.register(tool)
             }
-            logger.info("MCP: registered \(filtered.count) tool(s) (render_report only)")
+            logger.info("MCP: registered \(filtered.count) tool(s): \(filtered.map(\.name).joined(separator: ", "))")
         } catch {
             logger.error("MCP startup failed: \(error.localizedDescription)")
         }
@@ -154,31 +155,42 @@ final class AskViewModel {
 
     /// Builds a render_report call from the agent's trace data and calls it via MCP.
     /// Only triggers when the trace includes a get_activity result.
-    /// Returns nil silently if MCP is not running or the tool call fails.
+    /// Returns nil if MCP is not running or the tool call fails.
     private func tryRenderReport(from trace: [TraceStep], query: String) async -> URL? {
-        guard await MCPClient.shared.isRunning else { return nil }
+        guard await MCPClient.shared.isRunning else {
+            logger.debug("tryRenderReport: skipped — MCP not running")
+            return nil
+        }
 
         guard let activityStep = trace.reversed().first(where: {
             if case .toolCall(let name, _, _) = $0.kind { return name == "get_activity" }
             return false
-        }), case .toolCall(_, _, let resultJSON) = activityStep.kind else { return nil }
+        }), case .toolCall(_, _, let resultJSON) = activityStep.kind else {
+            logger.debug("tryRenderReport: skipped — no get_activity step in trace")
+            return nil
+        }
 
         guard let sections = buildReportSections(from: resultJSON, query: query),
-              !sections.isEmpty else { return nil }
+              !sections.isEmpty else {
+            logger.warning("tryRenderReport: buildReportSections returned nil/empty — activityJSON: \(resultJSON.prefix(200))")
+            return nil
+        }
 
         do {
             let result = try await MCPClient.shared.callTool(
                 name: "render_report",
                 arguments: ["title": "FocusLens Report", "sections": sections]
             )
+            logger.debug("tryRenderReport: render_report raw result: \(result.prefix(300))")
             if let urlStr = (try? JSONSerialization.jsonObject(with: Data(result.utf8)))
                 .flatMap({ $0 as? [String: Any] })?["url"] as? String,
                let url = URL(string: urlStr) {
                 logger.info("MCP render_report: \(url.absoluteString)")
                 return url
             }
+            logger.warning("tryRenderReport: no 'url' key in render_report result: \(result.prefix(300))")
         } catch {
-            logger.warning("render_report MCP call failed: \(error.localizedDescription)")
+            logger.error("render_report MCP call failed: \(error.localizedDescription)")
         }
         return nil
     }

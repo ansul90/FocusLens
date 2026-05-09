@@ -249,13 +249,16 @@ struct ClassifyAppTool: AgentTool {
 
     private let gemini: any GeminiClassifying
     private let insights: AppInsightsStore
+    private let categoryStore: CategoryStore
 
     init(
         gemini: any GeminiClassifying = GeminiClient(),
-        insights: AppInsightsStore = AppInsightsStore()
+        insights: AppInsightsStore = AppInsightsStore(),
+        categoryStore: CategoryStore = CategoryStore()
     ) {
         self.gemini = gemini
         self.insights = insights
+        self.categoryStore = categoryStore
     }
 
     func run(args: [String: Any]) async -> String {
@@ -273,8 +276,11 @@ struct ClassifyAppTool: AgentTool {
 
         // Cache miss — classify via Gemini
         let request = GeminiBatchRequest(items: [GeminiBatchRequest.Item(id: 0, title: appName)])
+        let allowedCategories: [String] = (try? categoryStore.fetchAllCategories().compactMap {
+            $0.id != nil ? $0.name : nil
+        }) ?? []
         do {
-            let response = try await gemini.classify(request)
+            let response = try await gemini.classify(request, allowedCategories: allowedCategories)
             guard let classification = response.classifications.first else {
                 return toolError("Gemini returned no classification for '\(appName)'")
             }

@@ -5,7 +5,7 @@ import os
 // MARK: - Protocol for testability
 
 protocol GeminiClassifying {
-    func classify(_ input: GeminiBatchRequest) async throws -> GeminiBatchResponse
+    func classify(_ input: GeminiBatchRequest, allowedCategories: [String]) async throws -> GeminiBatchResponse
 }
 
 extension GeminiClient: GeminiClassifying {}
@@ -61,13 +61,23 @@ struct BrowserClassifier {
 
         guard !sessions.isEmpty else { return ClassificationResult(found: 0, updated: 0) }
 
-        // 3. Build mapper
-        let mapper = BrowserCategoryMapper(existing: categories)
+        // 3. Filter out any sessions whose app already has an authoritative override —
+        //    those should never have reached the Browser queue, but guard here just in case.
+        let overriddenBundleIds: Set<String> = {
+            let overrides = (try? categoryStore.fetchAllOverrides()) ?? []
+            return Set(overrides.map { $0.appBundleId })
+        }()
+        let eligibleSessions = sessions.filter { !overriddenBundleIds.contains($0.appBundleId) }
+        guard !eligibleSessions.isEmpty else { return ClassificationResult(found: sessions.count, updated: 0) }
 
-        // 4. Process in batches
+        // 4. Build mapper and snapshot the allowed-category list for this batch
+        let mapper = BrowserCategoryMapper(existing: categories)
+        let allowedCategoryNames = categories.compactMap { $0.id != nil ? $0.name : nil }
+
+        // 5. Process in batches
         var totalUpdated = 0
-        let chunks = stride(from: 0, to: sessions.count, by: AppConstants.AI.maxBatchSize).map {
-            Array(sessions[$0..<min($0 + AppConstants.AI.maxBatchSize, sessions.count)])
+        let chunks = stride(from: 0, to: eligibleSessions.count, by: AppConstants.AI.maxBatchSize).map {
+            Array(eligibleSessions[$0..<min($0 + AppConstants.AI.maxBatchSize, eligibleSessions.count)])
         }
 
         for chunk in chunks {
@@ -78,7 +88,7 @@ struct BrowserClassifier {
 
             let response: GeminiBatchResponse
             do {
-                response = try await client.classify(batchRequest)
+                response = try await client.classify(batchRequest, allowedCategories: allowedCategoryNames)
             } catch {
                 logger.error("Gemini classification failed for chunk: \(error.localizedDescription)")
                 continue  // skip chunk on error; sessions stay as "Browser"
@@ -113,7 +123,7 @@ struct BrowserClassifier {
             logger.info("BrowserClassifier: classified \(chunkUpdated) sessions in chunk")
         }
 
-        logger.info("BrowserClassifier: \(sessions.count) found, \(totalUpdated) updated")
+        logger.info("BrowserClassifier: \(sessions.count) found, \(eligibleSessions.count) eligible, \(totalUpdated) updated")
         return ClassificationResult(found: sessions.count, updated: totalUpdated)
     }
 }

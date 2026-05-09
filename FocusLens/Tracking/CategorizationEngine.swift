@@ -11,15 +11,18 @@ struct CategorizationEngine {
         self.store = store
     }
 
-    // Returns the best-matching Category for a given session, or nil if no rule matches.
+    // Returns the best-matching Category for a given session.
+    // Resolution order: overrides > rules > nil.
     func categorize(bundleId: String, windowTitle: String?) -> Category? {
         let rules: [CategoryRule]
         let allCategories: [Category]
+        let overrides: [CategoryOverride]
         do {
             rules = try store.fetchAllRulesOrdered()
             allCategories = try store.fetchAllCategories()
+            overrides = try store.fetchAllOverrides()
         } catch {
-            logger.error("Failed to load rules/categories: \(error)")
+            logger.error("Failed to load rules/categories/overrides: \(error)")
             return nil
         }
         let categoryMap = Dictionary(uniqueKeysWithValues: allCategories.compactMap { c -> (Int64, Category)? in
@@ -27,6 +30,13 @@ struct CategorizationEngine {
             return (id, c)
         })
 
+        // 1. Override wins unconditionally
+        if let override = overrides.first(where: { $0.appBundleId == bundleId }),
+           let category = categoryMap[override.categoryId] {
+            return category
+        }
+
+        // 2. Best rule match
         guard let matchedRule = CategorizationEngine.bestMatch(rules: rules, bundleId: bundleId, windowTitle: windowTitle) else {
             return nil
         }
@@ -46,10 +56,12 @@ struct CategorizationEngine {
     func batchCategorize() throws -> Int {
         let rules = try store.fetchAllRulesOrdered()
         let categories = try store.fetchAllCategories()
+        let overrides = try store.fetchAllOverrides()
         let categoryMap = Dictionary(uniqueKeysWithValues: categories.compactMap { c -> (Int64, Category)? in
             guard let id = c.id else { return nil }
             return (id, c)
         })
+        let overrideMap = Dictionary(uniqueKeysWithValues: overrides.map { ($0.appBundleId, $0.categoryId) })
 
         let pool = DatabaseManager.shared.dbPool
         let uncategorized: [ActivitySession] = try pool.read { db in
@@ -64,6 +76,14 @@ struct CategorizationEngine {
         try pool.write { db in
             for session in uncategorized {
                 guard let id = session.id else { continue }
+                // Override wins first
+                if let overrideCategoryId = overrideMap[session.appBundleId],
+                   categoryMap[overrideCategoryId] != nil {
+                    try db.execute(sql: "UPDATE activity_sessions SET category_id = ? WHERE id = ?",
+                                   arguments: [overrideCategoryId, id])
+                    count += 1
+                    continue
+                }
                 guard let matchedRule = CategorizationEngine.bestMatch(
                     rules: rules, bundleId: session.appBundleId, windowTitle: session.windowTitle
                 ) else { continue }
@@ -84,10 +104,12 @@ struct CategorizationEngine {
     func recategorizeAll(since date: Date) throws -> Int {
         let rules = try store.fetchAllRulesOrdered()
         let categories = try store.fetchAllCategories()
+        let overrides = try store.fetchAllOverrides()
         let categoryMap = Dictionary(uniqueKeysWithValues: categories.compactMap { c -> (Int64, Category)? in
             guard let id = c.id else { return nil }
             return (id, c)
         })
+        let overrideMap = Dictionary(uniqueKeysWithValues: overrides.map { ($0.appBundleId, $0.categoryId) })
 
         let pool = DatabaseManager.shared.dbPool
         let sinceStr = CategorizationEngine.grdbDateFormatter.string(from: date)
@@ -104,6 +126,14 @@ struct CategorizationEngine {
         try pool.write { db in
             for session in sessions {
                 guard let id = session.id else { continue }
+                // Override wins first
+                if let overrideCategoryId = overrideMap[session.appBundleId],
+                   categoryMap[overrideCategoryId] != nil {
+                    try db.execute(sql: "UPDATE activity_sessions SET category_id = ? WHERE id = ?",
+                                   arguments: [overrideCategoryId, id])
+                    count += 1
+                    continue
+                }
                 let matchedRule = CategorizationEngine.bestMatch(
                     rules: rules, bundleId: session.appBundleId, windowTitle: session.windowTitle
                 )

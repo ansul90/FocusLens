@@ -2,6 +2,7 @@ import Testing
 @testable import FocusLens
 
 @Suite("ActivityTracker")
+@MainActor
 struct ActivityTrackerTests {
     @Test("isPaused starts false")
     func startsUnpaused() async {

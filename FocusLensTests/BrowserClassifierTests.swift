@@ -8,13 +8,13 @@ import GRDB
 struct FakeGeminiClient: GeminiClassifying {
     let response: GeminiBatchResponse
 
-    func classify(_ input: GeminiBatchRequest) async throws -> GeminiBatchResponse {
+    func classify(_ input: GeminiBatchRequest, allowedCategories: [String]) async throws -> GeminiBatchResponse {
         response
     }
 }
 
 struct FailingGeminiClient: GeminiClassifying {
-    func classify(_ input: GeminiBatchRequest) async throws -> GeminiBatchResponse {
+    func classify(_ input: GeminiBatchRequest, allowedCategories: [String]) async throws -> GeminiBatchResponse {
         throw GeminiError.httpStatus(503)
     }
 }

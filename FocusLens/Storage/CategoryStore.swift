@@ -70,4 +70,20 @@ struct CategoryStore: Sendable {
             try CategoryRule.filter(CategoryRule.Columns.id == id).deleteAll(db)
         }
     }
+
+    // MARK: - Overrides
+
+    func fetchAllOverrides() throws -> [CategoryOverride] {
+        try dbPool.read { db in
+            try CategoryOverride.fetchAll(db)
+        }
+    }
+
+    func fetchOverride(for appBundleId: String) throws -> CategoryOverride? {
+        try dbPool.read { db in
+            try CategoryOverride
+                .filter(CategoryOverride.Columns.appBundleId == appBundleId)
+                .fetchOne(db)
+        }
+    }
 }

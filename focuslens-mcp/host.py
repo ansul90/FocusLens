@@ -36,10 +36,10 @@ Data tools (call these to fetch activity data):
   - get_productivity_score(start, end)  → 0-100 score + tier breakdown
   - get_category_breakdown(start, end)  → seconds per category
   - get_hourly_breakdown(start, end)    → activity per hour with dominant tier
+  - summarize_day(date)                 → Ollama-generated narrative for a single day
   Dates are always YYYY-MM-DD strings.
 
-Research + storage tools:
-  - web_lookup_app(query)               → DuckDuckGo search + page summary
+Storage tools:
   - insights_store(operation, ...)      → CRUD on saved app verdicts
 
 UI tools (always call at most once, at the end):
@@ -68,13 +68,11 @@ KPI sections are grouped into a grid row automatically.
 tier on bar_chart data: -2=very distracting, -1=distracting, 0=neutral,
                          1=productive, 2=very productive (controls bar colour).
 
-## Default workflow (when user asks to research apps)
+## Summarize workflow (when user asks for a day summary or journal)
 
-1. Call list_top_apps to see top apps.
-2. Call insights_store(operation="list") to see what's already saved. Skip those.
-3. For each unseen app: call web_lookup_app, then insights_store(upsert).
-4. Call show_dashboard once at the end.
-5. Reply briefly. Stop calling tools.
+1. Call summarize_day(date) for the target day. It returns stats + narrative.
+2. Relay the narrative to the user. Optionally call render_report with the stats.
+3. Stop calling tools.
 
 ## Custom analysis workflow (when user asks for charts/insights)
 
@@ -236,10 +234,7 @@ def main() -> int:
         "prompt",
         nargs="?",
         default=(
-            "Look at my top apps from the last 7 days. For any app I don't yet "
-            "have a saved insight for, search the web to determine what it is "
-            "and whether it's productive, neutral, or distracting. Save a "
-            "verdict for each, then show me the dashboard."
+            "Summarize my last 3 days one by one, then show me the dashboard."
         ),
         help="Natural-language instruction for the agent (default is the demo prompt).",
     )

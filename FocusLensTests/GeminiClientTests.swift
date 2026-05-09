@@ -74,7 +74,7 @@ struct GeminiClientTests {
         let client = GeminiClient(settings: settings, session: makeSession())
         let batch = GeminiBatchRequest(items: [.init(id: 0, title: "test")])
         let error = try await #require(throws: (any Error).self) {
-            try await client.classify(batch)
+            try await client.classify(batch, allowedCategories: ["Development", "Browser"])
         }
         guard case GeminiError.missingKey = error else {
             Issue.record("Expected GeminiError.missingKey, got \(error)")
@@ -89,7 +89,7 @@ struct GeminiClientTests {
         let client = GeminiClient(settings: settings, session: makeSession())
         let batch = GeminiBatchRequest(items: [.init(id: 0, title: "test")])
         let error = try await #require(throws: (any Error).self) {
-            try await client.classify(batch)
+            try await client.classify(batch, allowedCategories: ["Development", "Browser"])
         }
         guard case GeminiError.missingKey = error else {
             Issue.record("Expected GeminiError.missingKey, got \(error)")
@@ -107,7 +107,7 @@ struct GeminiClientTests {
         let client = GeminiClient(settings: makeSettings(), session: makeSession())
         let batch = GeminiBatchRequest(items: [.init(id: 0, title: "test")])
         let error = try await #require(throws: (any Error).self) {
-            try await client.classify(batch)
+            try await client.classify(batch, allowedCategories: ["Development", "Browser"])
         }
         guard case GeminiError.httpStatus(401) = error else {
             Issue.record("Expected GeminiError.httpStatus(401), got \(error)")
@@ -125,7 +125,7 @@ struct GeminiClientTests {
         let client = GeminiClient(settings: makeSettings(), session: makeSession())
         let batch = GeminiBatchRequest(items: [.init(id: 0, title: "test")])
         let error = try await #require(throws: (any Error).self) {
-            try await client.classify(batch)
+            try await client.classify(batch, allowedCategories: ["Development", "Browser"])
         }
         guard case GeminiError.invalidResponse = error else {
             Issue.record("Expected GeminiError.invalidResponse, got \(error)")
@@ -145,7 +145,7 @@ struct GeminiClientTests {
         defer { StubURLProtocol.handler = nil }
         let client = GeminiClient(settings: makeSettings(), session: makeSession())
         let batch = GeminiBatchRequest(items: [.init(id: 0, title: "GitHub")])
-        let result = try await client.classify(batch)
+        let result = try await client.classify(batch, allowedCategories: ["Development", "Browser"])
         #expect(result.classifications.count == 1)
         #expect(result.classifications[0].category == "Development")
         #expect(result.classifications[0].tier == 2)
@@ -163,11 +163,65 @@ struct GeminiClientTests {
         let client = GeminiClient(settings: makeSettings(), session: makeSession())
         let batch = GeminiBatchRequest(items: [.init(id: 0, title: "test")])
         let error = try await #require(throws: (any Error).self) {
-            try await client.classify(batch)
+            try await client.classify(batch, allowedCategories: ["Development", "Browser"])
         }
         guard case GeminiError.decoding = error else {
             Issue.record("Expected GeminiError.decoding, got \(error)")
             return
         }
     }
+
+    @Test("request body includes responseSchema with category enum")
+    func requestIncludesResponseSchemaEnum() async throws {
+        let captured = ContinuationBox<URLRequest>()
+        StubURLProtocol.handler = { request in
+            captured.value = request
+            // Return a valid empty response so the call completes successfully.
+            let innerText = #"{"classifications":[]}"#
+            let innerJSONValue = try String(data: JSONEncoder().encode(innerText), encoding: .utf8)!
+            let response = okResponse(for: request.url!)
+            return (response, geminiEnvelope(innerJSON: innerJSONValue))
+        }
+        defer { StubURLProtocol.handler = nil }
+
+        let client = GeminiClient(settings: makeSettings(), session: makeSession())
+        let batch = GeminiBatchRequest(items: [.init(id: 0, title: "test")])
+        _ = try await client.classify(batch, allowedCategories: ["Development", "News", "Browser"])
+
+        let request = try #require(captured.value)
+        // URLProtocol stub strips httpBody; check via httpBodyStream instead.
+        let bodyData: Data = {
+            if let direct = request.httpBody { return direct }
+            guard let stream = request.httpBodyStream else { return Data() }
+            stream.open()
+            defer { stream.close() }
+            var data = Data()
+            let bufferSize = 4096
+            let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+            defer { buffer.deallocate() }
+            while stream.hasBytesAvailable {
+                let read = stream.read(buffer, maxLength: bufferSize)
+                if read <= 0 { break }
+                data.append(buffer, count: read)
+            }
+            return data
+        }()
+
+        let body = try #require(try? JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
+        let genConfig = try #require(body["generationConfig"] as? [String: Any])
+        let schema = try #require(genConfig["responseSchema"] as? [String: Any])
+        let properties = try #require(schema["properties"] as? [String: Any])
+        let classifications = try #require(properties["classifications"] as? [String: Any])
+        let items = try #require(classifications["items"] as? [String: Any])
+        let itemProps = try #require(items["properties"] as? [String: Any])
+        let category = try #require(itemProps["category"] as? [String: Any])
+        let enumValues = try #require(category["enum"] as? [String])
+        #expect(enumValues == ["Development", "News", "Browser"])
+    }
+}
+
+// MARK: - Helper for capturing values across the URLProtocol stub boundary
+
+final class ContinuationBox<T>: @unchecked Sendable {
+    var value: T?
 }

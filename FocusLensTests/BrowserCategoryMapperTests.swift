@@ -4,57 +4,44 @@ import Testing
 @Suite("BrowserCategoryMapper")
 struct BrowserCategoryMapperTests {
 
-    // Helper: make a Category with an id
-    private func cat(id: Int64, name: String, score: Int) -> Category {
+    private func cat(id: Int64, name: String, score: Int = 0) -> Category {
         Category(id: id, name: name, colorHex: "#000000", productivityScore: score)
     }
 
     @Test("exact case-insensitive name match returns correct id")
     func exactMatchCaseInsensitive() {
-        let cats = [cat(id: 1, name: "Development", score: 2), cat(id: 2, name: "Browser", score: 0)]
+        let cats = [cat(id: 1, name: "Development", score: 2), cat(id: 2, name: "Browser")]
         let mapper = BrowserCategoryMapper(existing: cats)
         #expect(mapper.resolve(label: "development", tier: 0) == 1)
         #expect(mapper.resolve(label: "DEVELOPMENT", tier: 0) == 1)
+        #expect(mapper.resolve(label: "Development", tier: 0) == 1)
     }
 
-    @Test("no exact match falls back to nearest tier")
-    func nearestTierFallback() {
-        let cats = [cat(id: 1, name: "Development", score: 2), cat(id: 2, name: "Media", score: -1)]
+    @Test("returns nil when label not in category list")
+    func unknownLabelReturnsNil() {
+        let cats = [cat(id: 1, name: "Development", score: 2), cat(id: 2, name: "Browser")]
         let mapper = BrowserCategoryMapper(existing: cats)
-        // tier = -2, nearest score is -1 (Media)
-        #expect(mapper.resolve(label: "Entertainment", tier: -2) == 2)
+        #expect(mapper.resolve(label: "Reddit", tier: -1) == nil)
+        #expect(mapper.resolve(label: "Entertainment", tier: -2) == nil)
     }
 
-    @Test("tie-breaking: lower score wins")
-    func tieBrokenByLowerScore() {
-        // score -1 and +1 are equidistant from tier 0
-        let cats = [cat(id: 1, name: "Productive", score: 1), cat(id: 2, name: "Distracting", score: -1)]
-        let mapper = BrowserCategoryMapper(existing: cats)
-        // lower score (-1) should win on tie
-        #expect(mapper.resolve(label: "Unknown", tier: 0) == 2)
-    }
-
-    @Test("empty categories returns nil")
+    @Test("empty category list returns nil")
     func emptyListReturnsNil() {
         let mapper = BrowserCategoryMapper(existing: [])
         #expect(mapper.resolve(label: "Browser", tier: 0) == nil)
     }
 
-    @Test("categories with nil ids are skipped in tier fallback")
-    func nilIdCategoriesSkipped() {
-        let noId = Category(id: nil, name: "NoId", colorHex: "#000", productivityScore: 0)
-        let withId = cat(id: 5, name: "HasId", score: 1)
-        let mapper = BrowserCategoryMapper(existing: [noId, withId])
-        #expect(mapper.resolve(label: "Nonexistent", tier: 0) == 5)
+    @Test("returns nil when matched category has no id")
+    func nilIdMatchReturnsNil() {
+        let noId = Category(id: nil, name: "News", colorHex: "#000", productivityScore: 0)
+        let mapper = BrowserCategoryMapper(existing: [noId])
+        #expect(mapper.resolve(label: "News", tier: 0) == nil)
     }
 
-    @Test("returns nil when no non-Browser category has a valid id")
-    func noValidNonBrowserIdReturnsNil() {
-        // nil-id non-Browser categories are skipped; Browser is excluded from fallback;
-        // so resolve returns nil and the caller keeps the existing category.
-        let nilId = Category(id: nil, name: "Misc", colorHex: "#000", productivityScore: 0)
-        let browser = cat(id: 3, name: "Browser", score: 0)
-        let mapper = BrowserCategoryMapper(existing: [nilId, browser])
-        #expect(mapper.resolve(label: "News", tier: 0) == nil)
+    @Test("Browser is a valid match target — caller decides skip semantics")
+    func browserMatchReturnsItsId() {
+        let cats = [cat(id: 14, name: "Browser")]
+        let mapper = BrowserCategoryMapper(existing: cats)
+        #expect(mapper.resolve(label: "Browser", tier: 0) == 14)
     }
 }

@@ -5,7 +5,7 @@ Tools:
   - get_productivity_score → weighted 0-100 score + tier breakdown
   - get_category_breakdown → seconds per category
   - get_hourly_breakdown   → activity + dominant tier per hour
-  - web_lookup_app       → DuckDuckGo search + page summary (internet)
+  - summarize_day        → Ollama-generated narrative summary of a single day
   - insights_store       → CRUD on app_insights table (local file)
   - render_report        → compose a custom Prefab report, returns URL (UI)
   - show_dashboard       → open the full interactive dashboard (UI)
@@ -21,7 +21,7 @@ from pydantic import ValidationError
 
 import db
 import insights
-import web
+import summarize
 import web_server
 from report_spec import ReportSpec
 
@@ -90,6 +90,25 @@ def get_hourly_breakdown(start: str, end: str) -> dict:
 
 
 @mcp.tool
+def summarize_day(date: str) -> dict:
+    """Generate a plain-English narrative summary of a single day's activity.
+
+    Uses a local Ollama model to produce a 2-3 paragraph description of how
+    the day was spent. Also returns the structured stats used to generate it.
+    Degrades gracefully if Ollama is unavailable (stats still returned).
+
+    Args:
+        date: The day to summarize as YYYY-MM-DD.
+
+    Returns {"date", "stats": {productivity_score, total_active_seconds,
+    top_apps, categories}, "narrative": "...", "error": "ollama_unavailable" (if failed)}.
+    """
+    from datetime import date as date_type
+    d = date_type.fromisoformat(date)
+    return summarize.build(d)
+
+
+@mcp.tool
 def render_report(title: str, sections: list[dict]) -> dict:
     """Compose a custom visual report and return a URL to open in the browser.
 
@@ -125,32 +144,6 @@ def render_report(title: str, sections: list[dict]) -> dict:
     url = f"{web_server.BASE_URL}/report/{report_id}"
     log.info("report %s ready at %s", report_id, url)
     return {"url": url, "report_id": report_id, "message": f"Report ready. Open: {url}"}
-
-
-@mcp.tool
-def web_lookup_app(query: str, max_results: int = 3) -> dict:
-    """Search the web for information about an app, website, or tool.
-
-    Returns DuckDuckGo search results plus a fetched summary of the top result.
-    Use this to determine what an unfamiliar app does and whether it is
-    productive, neutral, or distracting.
-    """
-    if not query or not query.strip():
-        raise ValueError("query must be non-empty")
-    results = web.search(query, limit=max_results)
-    page_summary = None
-    for r in results:
-        try:
-            page_summary = web.fetch_summary(r["url"])
-            break
-        except Exception as exc:
-            log.warning("fetch_summary failed for %s: %s", r["url"], exc)
-            continue
-    return {
-        "query": query,
-        "results": results,
-        "page_summary": page_summary,
-    }
 
 
 @mcp.tool

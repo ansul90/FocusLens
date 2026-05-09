@@ -21,7 +21,7 @@ struct DashboardView: View {
 
     private enum NavDestination: String, Hashable {
         case activity, ask
-        case settingsGeneral, settingsCategories, settingsNeverTrack, settingsAI
+        case settingsGeneral, settingsCategories, settingsNeverTrack, settingsAI, settingsSessionBrowser
     }
 
     var body: some View {
@@ -42,6 +42,8 @@ struct DashboardView: View {
                         .tag(NavDestination.settingsNeverTrack)
                     Label("AI", systemImage: "sparkles")
                         .tag(NavDestination.settingsAI)
+                    Label("Session Browser", systemImage: "list.bullet.rectangle")
+                        .tag(NavDestination.settingsSessionBrowser)
                 }
             }
             .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 200)
@@ -54,11 +56,13 @@ struct DashboardView: View {
             case .settingsGeneral:
                 GeneralSettingsTab()
             case .settingsCategories:
-                CategorySettingsView()
+                CategoriesTabView()
             case .settingsNeverTrack:
                 NeverTrackTab()
             case .settingsAI:
                 AISettingsView()
+            case .settingsSessionBrowser:
+                SessionBrowserView()
             }
         }
         .frame(minWidth: 720, minHeight: 520)

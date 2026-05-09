@@ -63,6 +63,19 @@
 		2A0000000000000000000037 /* AgentRunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000003A /* AgentRunnerTests.swift */; };
 		F0C9E68F2FADF0E000352144 /* Migration005_FixBrowserRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C9E68E2FADF0E000352144 /* Migration005_FixBrowserRules.swift */; };
 		FA000000000000000000AB01 /* Migration006_WindowTitleIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA01 /* Migration006_WindowTitleIndex.swift */; };
+		FA000000000000000000AB10 /* Migration007_ConsolidateCategories.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA10 /* Migration007_ConsolidateCategories.swift */; };
+		FA000000000000000000AB11 /* Migration007Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA11 /* Migration007Tests.swift */; };
+		FA000000000000000000AB12 /* RuleAuthoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA12 /* RuleAuthoringService.swift */; };
+		FA000000000000000000AB13 /* RuleAuthoringServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA13 /* RuleAuthoringServiceTests.swift */; };
+		FA000000000000000000AB14 /* CategoryOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA14 /* CategoryOverride.swift */; };
+		FA000000000000000000AB17 /* UnclassifiedSessionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA17 /* UnclassifiedSessionsView.swift */; };
+		FA000000000000000000AB18 /* OverridesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA18 /* OverridesView.swift */; };
+		FA000000000000000000AB19 /* SessionBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA19 /* SessionBrowserView.swift */; };
+		FA000000000000000000AB1A /* Migration009_BumpLearningScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA1A /* Migration009_BumpLearningScore.swift */; };
+		FA000000000000000000AB1B /* Migration010_NeverTrackTitlesAndIgnored.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA1B /* Migration010_NeverTrackTitlesAndIgnored.swift */; };
+		FA000000000000000000AB1C /* IgnoredTitleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA1C /* IgnoredTitleStore.swift */; };
+		FA000000000000000000AB15 /* Migration008_CategoryOverrides.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA15 /* Migration008_CategoryOverrides.swift */; };
+		FA000000000000000000AB16 /* Migration008Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA16 /* Migration008Tests.swift */; };
 		FA000000000000000000AB02 /* DashboardSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA02 /* DashboardSections.swift */; };
 		FA000000000000000000AB03 /* ProductivityScoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA03 /* ProductivityScoring.swift */; };
 		FA000000000000000000AB05 /* DailyTierChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000AA05 /* DailyTierChart.swift */; };
@@ -141,6 +154,19 @@
 		1A000000000000000000003A /* AgentRunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunnerTests.swift; sourceTree = "<group>"; };
 		F0C9E68E2FADF0E000352144 /* Migration005_FixBrowserRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration005_FixBrowserRules.swift; sourceTree = "<group>"; };
 		FA000000000000000000AA01 /* Migration006_WindowTitleIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration006_WindowTitleIndex.swift; sourceTree = "<group>"; };
+		FA000000000000000000AA10 /* Migration007_ConsolidateCategories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration007_ConsolidateCategories.swift; sourceTree = "<group>"; };
+		FA000000000000000000AA11 /* Migration007Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration007Tests.swift; sourceTree = "<group>"; };
+		FA000000000000000000AA12 /* RuleAuthoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleAuthoringService.swift; sourceTree = "<group>"; };
+		FA000000000000000000AA13 /* RuleAuthoringServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleAuthoringServiceTests.swift; sourceTree = "<group>"; };
+		FA000000000000000000AA14 /* CategoryOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryOverride.swift; sourceTree = "<group>"; };
+		FA000000000000000000AA17 /* UnclassifiedSessionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnclassifiedSessionsView.swift; sourceTree = "<group>"; };
+		FA000000000000000000AA18 /* OverridesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverridesView.swift; sourceTree = "<group>"; };
+		FA000000000000000000AA19 /* SessionBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionBrowserView.swift; sourceTree = "<group>"; };
+		FA000000000000000000AA15 /* Migration008_CategoryOverrides.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration008_CategoryOverrides.swift; sourceTree = "<group>"; };
+		FA000000000000000000AA1A /* Migration009_BumpLearningScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration009_BumpLearningScore.swift; sourceTree = "<group>"; };
+		FA000000000000000000AA1B /* Migration010_NeverTrackTitlesAndIgnored.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration010_NeverTrackTitlesAndIgnored.swift; sourceTree = "<group>"; };
+		FA000000000000000000AA1C /* IgnoredTitleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IgnoredTitleStore.swift; sourceTree = "<group>"; };
+		FA000000000000000000AA16 /* Migration008Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migration008Tests.swift; sourceTree = "<group>"; };
 		FA000000000000000000AA02 /* DashboardSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardSections.swift; sourceTree = "<group>"; };
 		FA000000000000000000AA03 /* ProductivityScoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductivityScoring.swift; sourceTree = "<group>"; };
 		FA000000000000000000AA05 /* DailyTierChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyTierChart.swift; sourceTree = "<group>"; };
@@ -210,6 +236,7 @@
 				1A0000000000000000000006 /* ActivitySession.swift */,
 				1A0000000000000000000018 /* Category.swift */,
 				1A0000000000000000000019 /* CategoryRule.swift */,
+				FA000000000000000000AA14 /* CategoryOverride.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -220,8 +247,10 @@
 				1A0000000000000000000007 /* DatabaseManager.swift */,
 				1A0000000000000000000008 /* ActivitySessionStore.swift */,
 				1A0000000000000000000009 /* NeverTrackStore.swift */,
+				FA000000000000000000AA1C /* IgnoredTitleStore.swift */,
 				1A000000000000000000001B /* CategoryStore.swift */,
 				FA000000000000000000AA07 /* AppInsightsStore.swift */,
+				FA000000000000000000AA12 /* RuleAuthoringService.swift */,
 				3A0000000000000000000006 /* Migrations */,
 			);
 			path = Storage;
@@ -232,6 +261,10 @@
 			children = (
 				F0C9E68E2FADF0E000352144 /* Migration005_FixBrowserRules.swift */,
 				FA000000000000000000AA01 /* Migration006_WindowTitleIndex.swift */,
+				FA000000000000000000AA10 /* Migration007_ConsolidateCategories.swift */,
+				FA000000000000000000AA15 /* Migration008_CategoryOverrides.swift */,
+				FA000000000000000000AA1A /* Migration009_BumpLearningScore.swift */,
+				FA000000000000000000AA1B /* Migration010_NeverTrackTitlesAndIgnored.swift */,
 				1A000000000000000000000A /* Migration001_Sessions.swift */,
 				1A000000000000000000001A /* Migration002_Categories.swift */,
 				1A0000000000000000000022 /* Migration003_SeedRules.swift */,
@@ -264,6 +297,9 @@
 				1A0000000000000000000020 /* SettingsView.swift */,
 				1A0000000000000000000021 /* CategorySettingsView.swift */,
 				1A000000000000000000002D /* AISettingsView.swift */,
+				FA000000000000000000AA17 /* UnclassifiedSessionsView.swift */,
+				FA000000000000000000AA18 /* OverridesView.swift */,
+				FA000000000000000000AA19 /* SessionBrowserView.swift */,
 				1A0000000000000000000036 /* AskViewModel.swift */,
 				1A0000000000000000000037 /* AskFocusLensView.swift */,
 			);
@@ -293,6 +329,9 @@
 				1A0000000000000000000038 /* OllamaClientTests.swift */,
 				1A0000000000000000000039 /* ResponseParserTests.swift */,
 				1A000000000000000000003A /* AgentRunnerTests.swift */,
+				FA000000000000000000AA11 /* Migration007Tests.swift */,
+				FA000000000000000000AA13 /* RuleAuthoringServiceTests.swift */,
+				FA000000000000000000AA16 /* Migration008Tests.swift */,
 			);
 			path = FocusLensTests;
 			sourceTree = "<group>";
@@ -461,6 +500,16 @@
 				2A000000000000000000000B /* PermissionManager.swift in Sources */,
 				F0C9E68F2FADF0E000352144 /* Migration005_FixBrowserRules.swift in Sources */,
 				FA000000000000000000AB01 /* Migration006_WindowTitleIndex.swift in Sources */,
+				FA000000000000000000AB10 /* Migration007_ConsolidateCategories.swift in Sources */,
+				FA000000000000000000AB12 /* RuleAuthoringService.swift in Sources */,
+				FA000000000000000000AB14 /* CategoryOverride.swift in Sources */,
+				FA000000000000000000AB17 /* UnclassifiedSessionsView.swift in Sources */,
+				FA000000000000000000AB18 /* OverridesView.swift in Sources */,
+				FA000000000000000000AB19 /* SessionBrowserView.swift in Sources */,
+				FA000000000000000000AB15 /* Migration008_CategoryOverrides.swift in Sources */,
+				FA000000000000000000AB1A /* Migration009_BumpLearningScore.swift in Sources */,
+				FA000000000000000000AB1B /* Migration010_NeverTrackTitlesAndIgnored.swift in Sources */,
+				FA000000000000000000AB1C /* IgnoredTitleStore.swift in Sources */,
 				2A000000000000000000000C /* MenuBarView.swift in Sources */,
 				FA000000000000000000AB08 /* ActivityAggregate.swift in Sources */,
 				F0C9E6932FADF30400352144 /* MCPClient.swift in Sources */,
@@ -515,6 +564,9 @@
 				2A0000000000000000000035 /* OllamaClientTests.swift in Sources */,
 				2A0000000000000000000036 /* ResponseParserTests.swift in Sources */,
 				2A0000000000000000000037 /* AgentRunnerTests.swift in Sources */,
+				FA000000000000000000AB11 /* Migration007Tests.swift in Sources */,
+				FA000000000000000000AB13 /* RuleAuthoringServiceTests.swift in Sources */,
+				FA000000000000000000AB16 /* Migration008Tests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
